@@ -22,7 +22,7 @@ async def get_planning_metrics(pool: asyncpg.Pool, lat: float, lon: float, radiu
     """
     row = await pool.fetchrow(query, lon, lat, radius_m)
     return {
-        "local_approval_rate": round(row["local_approval_rate"] or 0.0, 4),
-        "avg_decision_time_days": round(row["avg_decision_time_days"] or 0.0, 1),
+        "local_approval_rate": round(float(row["local_approval_rate"] or 0.0), 4),
+        "avg_decision_time_days": round(float(row["avg_decision_time_days"] or 0.0), 1),
         "similar_applications_nearby": row["similar_applications_nearby"] or 0,
     }

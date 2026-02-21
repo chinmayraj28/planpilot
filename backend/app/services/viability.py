@@ -11,12 +11,13 @@ def compute_viability(
     Compute viability score (0–100) and return the breakdown.
 
     Formula:
-        base_score          = approval_probability * 60
+        base_score          = approval_probability * 80   (max 80)
+        market_bonus        = price + trend bonus up to 20
         constraint_penalty  = sum of constraint deductions
         flood_penalty       = flood zone deduction
-        market_strength_bonus = price/trend bonus up to 15
+    Max possible: ~100 (high approval, no constraints, strong market)
     """
-    base_score = approval_probability * 60
+    base_score = approval_probability * 80
 
     constraint_penalty = 0.0
     if in_conservation_area:
@@ -32,8 +33,8 @@ def compute_viability(
     elif flood_zone == 2:
         flood_penalty = 6
 
-    # Market bonus: up to 10 for high prices, up to 5 for positive trend
-    price_bonus = min(10.0, avg_price_per_m2 / 1000)
+    # Market bonus: up to 15 for high prices, up to 5 for positive trend
+    price_bonus = min(15.0, avg_price_per_m2 / 500)
     trend_bonus = min(5.0, max(0.0, price_trend_24m * 50))
     market_strength_bonus = round(price_bonus + trend_bonus, 2)
 

@@ -1,25 +1,27 @@
 """
 Ingest historical planning application data from the IBex Planning API.
 
-Pulls applications for a given set of Local Authority codes, geocodes them
-using a postcode → lat/lon lookup (ONSPD), and inserts into the
-planning_applications table. Feature columns are left NULL at this stage —
-run feature_engineering.py afterwards to populate them.
+Pulls applications for given council IDs and inserts into the
+planning_applications table. Geometry is returned in BNG (EPSG:27700) and
+converted to WGS84 centroids via PostGIS.
 
-IBex API docs: https://ibexplanning.co.uk/api-docs (requires login)
+Feature columns are left NULL at this stage — run feature_engineering.py
+afterwards to populate them.
+
+Available London boroughs:
+    22 = Bexley       24 = Enfield      26 = Lambeth
+    23 = Bromley      25 = Royal Greenwich   27 = Lewisham
 
 Usage:
-    python scripts/ingest_ibex.py \
-        --las E09000033,E09000022 \
-        --postcodes data/postcodes/ONSPD_latest.csv \
-        --years 5
+    python scripts/ingest_ibex.py --councils 25,26,27 --years 5
 """
 import argparse
 import asyncio
 import asyncpg
 import httpx
-import pandas as pd
-from datetime import datetime, timedelta
+import re
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 import os
 
@@ -27,170 +29,184 @@ load_dotenv()
 
 DB_URL = os.environ["DATABASE_URL"]
 IBEX_API_KEY = os.environ["IBEX_API_KEY"]
-IBEX_BASE_URL = os.environ.get("IBEX_BASE_URL", "https://api.ibexplanning.co.uk/v1")
+IBEX_BASE_URL = os.environ.get("IBEX_BASE_URL", "https://ibex.seractech.co.uk")
 
-PAGE_SIZE = 100
+# Regex to extract UK postcode from the end of a raw address string
+_POSTCODE_RE = re.compile(r"([A-Z]{1,2}\d[\dA-Z]?\s?\d[A-Z]{2})$", re.IGNORECASE)
 
 
 def _ibex_headers() -> dict:
     return {
         "Authorization": f"Bearer {IBEX_API_KEY}",
         "Accept": "application/json",
+        "Content-Type": "application/json",
     }
 
 
 def _parse_decision(raw: str) -> str | None:
-    """Normalise IBex decision strings to 'approved' or 'refused'."""
+    """Normalise IBex normalised_decision to 'approved' or 'refused'."""
     if not raw:
         return None
     lower = raw.lower()
-    if any(w in lower for w in ("approved", "grant", "permitted")):
+    if "approved" in lower or "grant" in lower or "permitted" in lower:
         return "approved"
-    if any(w in lower for w in ("refused", "reject", "denied")):
+    if "refused" in lower or "reject" in lower or "denied" in lower:
         return "refused"
-    return None  # withdrawn, invalid, etc. — skip
+    return None
 
 
-async def fetch_applications(la_code: str, since: datetime, client: httpx.AsyncClient) -> list[dict]:
-    """Fetch all planning applications for a local authority since a given date."""
-    apps = []
-    page = 1
-    while True:
-        params = {
-            "local_authority": la_code,
-            "decision_date_from": since.strftime("%Y-%m-%d"),
-            "page": page,
-            "per_page": PAGE_SIZE,
-        }
-        resp = await client.get(
-            f"{IBEX_BASE_URL}/applications",
-            params=params,
-            headers=_ibex_headers(),
-            timeout=30,
-        )
-        if resp.status_code == 404:
-            break
-        resp.raise_for_status()
-        data = resp.json()
-
-        results = data.get("results", data.get("data", []))
-        if not results:
-            break
-
-        apps.extend(results)
-        print(f"  LA {la_code}: page {page}, fetched {len(results)} apps (total so far: {len(apps)})")
-
-        # Stop if we've received fewer than a full page
-        if len(results) < PAGE_SIZE:
-            break
-        page += 1
-
-    return apps
+def _extract_postcode(raw_address: str | None) -> str | None:
+    if not raw_address:
+        return None
+    m = _POSTCODE_RE.search(raw_address.strip())
+    if m:
+        return m.group(1).upper().replace(" ", "")
+    return None
 
 
-def build_postcode_lookup(postcode_csv: str) -> dict:
-    print("Loading postcode lookup...")
-    df = pd.read_csv(postcode_csv, usecols=["pcd", "lat", "long"], dtype=str)
-    df["pcd"] = df["pcd"].str.replace(" ", "").str.upper()
-    return df.set_index("pcd")[["lat", "long"]].to_dict("index")
+async def fetch_month(
+    council_ids: list[int],
+    date_from: date,
+    date_to: date,
+    client: httpx.AsyncClient,
+) -> list[dict]:
+    """Fetch applications for a list of councils within a date window."""
+    body = {
+        "input": {
+            "date_from": date_from.isoformat(),
+            "date_to": date_to.isoformat(),
+            "council_id": council_ids,
+        },
+        "filters": {
+            "normalised_decision": ["Approved", "Refused"],
+        },
+    }
+    resp = await client.post(
+        f"{IBEX_BASE_URL}/applications",
+        json=body,
+        headers=_ibex_headers(),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data if isinstance(data, list) else []
 
 
 async def insert_batch(conn: asyncpg.Connection, batch: list[tuple]):
+    """Insert records; geometry is BNG WKT → PostGIS centroid → WGS84."""
     await conn.executemany("""
         INSERT INTO planning_applications
-            (reference, postcode, decision, decision_date, decision_days, application_type, geom)
-        VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326))
+            (reference, postcode, decision, decision_date, decision_days,
+             application_type, geom)
+        VALUES (
+            $1, $2, $3, $4, $5, $6,
+            ST_Transform(ST_Centroid(ST_GeomFromText($7, 27700)), 4326)
+        )
         ON CONFLICT (reference) DO NOTHING
     """, batch)
 
 
-async def run(la_codes: list[str], postcode_csv: str, years: int):
-    pc_lookup = build_postcode_lookup(postcode_csv)
-    since = datetime.now() - timedelta(days=365 * years)
-
+async def run(council_ids: list[int], years: int):
     conn = await asyncpg.connect(DB_URL)
 
-    # Ensure unique index on reference to support ON CONFLICT
+    # Ensure unique index on reference
     await conn.execute("""
-        ALTER TABLE planning_applications
-        ADD COLUMN IF NOT EXISTS reference TEXT;
-
         CREATE UNIQUE INDEX IF NOT EXISTS planning_apps_reference_idx
         ON planning_applications (reference);
     """)
 
+    end_date = date.today()
+    start_date = end_date - relativedelta(years=years)
+
+    total_inserted = 0
+    total_skipped = 0
+
     async with httpx.AsyncClient() as client:
-        for la_code in la_codes:
-            print(f"\nFetching applications for LA: {la_code}")
-            apps = await fetch_applications(la_code, since, client)
-            print(f"  Total fetched: {len(apps)}")
+        # Chunk by month to stay well under the 1000-record API limit
+        chunk_start = start_date
+        while chunk_start < end_date:
+            chunk_end = min(chunk_start + relativedelta(months=1) - timedelta(days=1), end_date)
+
+            print(f"Fetching {chunk_start} → {chunk_end} for councils {council_ids}...")
+            try:
+                apps = await fetch_month(council_ids, chunk_start, chunk_end, client)
+            except httpx.HTTPStatusError as e:
+                print(f"  HTTP {e.response.status_code} — skipping chunk")
+                chunk_start += relativedelta(months=1)
+                continue
 
             batch = []
             skipped = 0
             for app in apps:
-                reference = app.get("reference") or app.get("app_ref") or app.get("id")
-                postcode_raw = app.get("postcode") or app.get("site_postcode", "")
-                postcode = postcode_raw.replace(" ", "").upper() if postcode_raw else ""
-                decision_raw = app.get("decision") or app.get("decision_type", "")
-                decision = _parse_decision(decision_raw)
-
-                if not decision or not postcode:
+                reference = app.get("planning_reference") or app.get("reference")
+                if not reference:
                     skipped += 1
                     continue
 
-                coords = pc_lookup.get(postcode)
-                if not coords:
+                decision = _parse_decision(
+                    app.get("normalised_decision") or app.get("decision", "")
+                )
+                if not decision:
                     skipped += 1
                     continue
 
-                decision_date_str = app.get("decision_date") or app.get("decided_at")
+                geometry = app.get("geometry")
+                if not geometry:
+                    skipped += 1
+                    continue
+
+                # Dates
                 try:
-                    decision_date = datetime.strptime(decision_date_str[:10], "%Y-%m-%d").date()
-                except (TypeError, ValueError):
+                    decision_date = date.fromisoformat(app["decided_date"][:10])
+                except (KeyError, TypeError, ValueError):
                     skipped += 1
                     continue
 
-                received_date_str = app.get("received_date") or app.get("validated_date")
                 try:
-                    received_date = datetime.strptime(received_date_str[:10], "%Y-%m-%d").date()
-                    decision_days = (decision_date - received_date).days
-                except (TypeError, ValueError):
+                    application_date = date.fromisoformat(app["application_date"][:10])
+                    decision_days = (decision_date - application_date).days
+                except (KeyError, TypeError, ValueError):
                     decision_days = None
 
-                application_type = app.get("application_type") or app.get("app_type", "")
-                lon = float(coords["long"])
-                lat = float(coords["lat"])
+                postcode = _extract_postcode(app.get("raw_address"))
+                app_type = app.get("normalised_application_type") or app.get("raw_application_type", "")
 
                 batch.append((
                     str(reference),
-                    postcode_raw.upper().strip(),
+                    postcode,
                     decision,
                     decision_date,
                     decision_days,
-                    application_type,
-                    lon,
-                    lat,
+                    app_type,
+                    geometry,      # WKT BNG polygon — converted in SQL
                 ))
-
-                if len(batch) >= 500:
-                    await insert_batch(conn, batch)
-                    batch.clear()
 
             if batch:
                 await insert_batch(conn, batch)
+                total_inserted += len(batch)
 
-            print(f"  Inserted: {len(apps) - skipped}  |  Skipped: {skipped}")
+            total_skipped += skipped
+            print(f"  Inserted: {len(batch)}  |  Skipped: {skipped}")
+            chunk_start += relativedelta(months=1)
 
     await conn.close()
-    print("\nIBex ingestion complete.")
+    print(f"\nIBex ingestion complete. Total inserted: {total_inserted}  |  Total skipped: {total_skipped}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--las", required=True, help="Comma-separated Local Authority codes e.g. E09000033,E09000022")
-    parser.add_argument("--postcodes", required=True, help="Path to ONSPD CSV for lat/lon lookup")
-    parser.add_argument("--years", type=int, default=5, help="How many years of history to pull (default: 5)")
+    parser.add_argument(
+        "--councils",
+        default="25,26,27",
+        help="Comma-separated IBex council IDs (default: 25=Greenwich,26=Lambeth,27=Lewisham)"
+    )
+    parser.add_argument(
+        "--years",
+        type=int,
+        default=5,
+        help="Years of history to pull (default: 5)"
+    )
     args = parser.parse_args()
 
-    la_codes = [c.strip() for c in args.las.split(",")]
-    asyncio.run(run(la_codes, args.postcodes, args.years))
+    council_ids = [int(c.strip()) for c in args.councils.split(",")]
+    asyncio.run(run(council_ids, args.years))

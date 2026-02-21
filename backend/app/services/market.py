@@ -24,13 +24,13 @@ async def get_market_metrics(pool: asyncpg.Pool, lat: float, lon: float, postcod
 async def _get_price_metrics(pool: asyncpg.Pool, lon: float, lat: float) -> dict:
     query = """
         SELECT
-            AVG(price_per_m2) AS avg_price_per_m2,
+            AVG(price) / 100.0 AS avg_price_per_m2,
             (
-                AVG(price_per_m2) FILTER (WHERE sale_date >= NOW() - INTERVAL '12 months') -
-                AVG(price_per_m2) FILTER (WHERE sale_date BETWEEN NOW() - INTERVAL '24 months' AND NOW() - INTERVAL '12 months')
+                AVG(price) FILTER (WHERE sale_date >= NOW() - INTERVAL '12 months') -
+                AVG(price) FILTER (WHERE sale_date BETWEEN NOW() - INTERVAL '24 months' AND NOW() - INTERVAL '12 months')
             ) /
             NULLIF(
-                AVG(price_per_m2) FILTER (WHERE sale_date BETWEEN NOW() - INTERVAL '24 months' AND NOW() - INTERVAL '12 months'),
+                AVG(price) FILTER (WHERE sale_date BETWEEN NOW() - INTERVAL '24 months' AND NOW() - INTERVAL '12 months'),
                 0
             ) AS price_trend_24m
         FROM price_paid
@@ -43,8 +43,8 @@ async def _get_price_metrics(pool: asyncpg.Pool, lon: float, lat: float) -> dict
     """
     row = await pool.fetchrow(query, lon, lat)
     return {
-        "avg_price_per_m2": round(row["avg_price_per_m2"] or 0.0, 2),
-        "price_trend_24m": round(row["price_trend_24m"] or 0.0, 4),
+        "avg_price_per_m2": round(float(row["avg_price_per_m2"] or 0.0), 2),
+        "price_trend_24m": round(float(row["price_trend_24m"] or 0.0), 4),
     }
 
 
@@ -62,7 +62,10 @@ async def _get_epc_rating(postcode: str) -> str:
         resp = await client.get(url, params=params, headers=headers, timeout=10)
         if resp.status_code != 200:
             return "N/A"
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception:
+            return "N/A"
 
     rows = data.get("rows", [])
     if not rows:

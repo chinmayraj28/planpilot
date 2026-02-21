@@ -66,31 +66,24 @@ export default function DashboardPage() {
     setReportData(null)
 
     try {
-      // Fire both requests in parallel
-      const [analyzeResult, reportResult] = await Promise.allSettled([
-        analyzePostcode(postcode, token),
-        fetchReport(postcode, token),
-      ])
+      // Step 1: Analyze — show dashboard panels as soon as this completes
+      const analyzeResult = await analyzePostcode(postcode, token)
+      setAnalyzeData(analyzeResult)
+      setLoading(false)
 
-      // Handle analyze result
-      if (analyzeResult.status === 'fulfilled') {
-        setAnalyzeData(analyzeResult.value)
-      } else {
-        throw new Error('Failed to analyze postcode')
-      }
-
-      // Handle report result (may take longer)
-      if (reportResult.status === 'fulfilled') {
-        setReportData(reportResult.value)
+      // Step 2: Fetch AI report — /analyze result is now cached on the backend
+      try {
+        const reportResult = await fetchReport(postcode, token)
+        setReportData(reportResult)
+      } catch (reportErr) {
+        console.error('Report generation failed:', reportErr)
+      } finally {
         setReportLoading(false)
-      } else {
-        setReportLoading(false)
-        console.error('Report generation failed:', reportResult.reason)
       }
     } catch (err: any) {
       setError(err.message || 'Failed to analyze postcode')
-    } finally {
       setLoading(false)
+      setReportLoading(false)
     }
   }
 

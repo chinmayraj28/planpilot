@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     epc_api_key: str
     epc_api_email: str
     ibex_api_key: str
-    ibex_base_url: str = "https://api.ibexplanning.co.uk/v1"
+    ibex_base_url: str = "https://ibex.seractech.co.uk"
     frontend_url: str = "http://localhost:3000"
 
     class Config:

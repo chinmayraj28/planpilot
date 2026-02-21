@@ -1,129 +1,91 @@
 # Data Acquisition Guide
 
+> **Scope: Southwark only** — all data is scoped to the London Borough of
+> Southwark (LA code: `E09000028`) for the hackathon build.
+
 This document explains every dataset you need to download before running the
 ingestion scripts. All datasets are free and openly licensed.
 
-Place downloaded files in the `backend/data/` directory as shown below.
+## Current data folder status
 
 ```
 backend/data/
 ├── flood/
-│   ├── Flood_Zone_2.shp  (+ .dbf, .prj, .shx)
-│   └── Flood_Zone_3.shp  (+ .dbf, .prj, .shx)
+│   └── RoFRS_London.shp  ✅  (+ .dbf, .prj, .sbn, .sbx, .shx)
 ├── conservation/
-│   └── conservation_areas.geojson
+│   └── Conservation_Areas.shp  ✅  (+ .cpg, .dbf, .prj, .shx)
 ├── greenbelt/
-│   └── greenbelt.shp     (+ .dbf, .prj, .shx)
+│   └── England_Green_Belt_2024_25_WGS84.shp  ✅  (+ .dbf, .prj, .shx)
 ├── article4/
-│   └── article4_directions.geojson
+│   └── article4_directions.geojson  ✅
 ├── price_paid/
-│   └── pp-complete.csv
+│   └── pp-complete.csv  ✅  (5 GB)
 └── postcodes/
-    └── ONSPD_latest.csv
+    └── ONSPD_NOV_2025_UK.csv  ✅  (1.3 GB)
 ```
 
----
-
-## 1. Price Paid Data (Land Registry)
-
-**Used for:** avg price per m², 24-month price trend
-**Script:** `scripts/ingest_price_paid.py`
-
-1. Go to: https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads
-2. Under **"Complete dataset"**, download `pp-complete.csv` (approx 4–5 GB).
-3. Place at `backend/data/price_paid/pp-complete.csv`
-
-**Licence:** Open Government Licence v3.0
-
-> Note: The complete file includes all transactions since 1995. The ingestion
-> script automatically filters to the last 5 years, so you don't need to
-> pre-filter it.
+**All required datasets are present.** No additional downloads needed.
 
 ---
 
-## 2. ONS Postcode Directory (ONSPD)
+## Dataset notes
 
-**Used for:** mapping postcodes to lat/lon during IBex and Price Paid ingestion
-**Script:** `scripts/ingest_price_paid.py`, `scripts/ingest_ibex.py`
+### 1. Flood Risk — `RoFRS_London.shp`
+**Source:** Environment Agency — Risk of Flooding from Rivers and Sea (London)
+**CRS:** British National Grid — converted to WGS84 automatically by ogr2ogr
 
-1. Go to: https://geoportal.statistics.gov.uk
-2. Search for **"ONS Postcode Directory"**
-3. Download the latest release — look for the CSV file inside the ZIP
-   (filename like `ONSPD_NOV_2024_UK.csv`)
-4. Place at `backend/data/postcodes/ONSPD_latest.csv`
+Uses `PROB_4BAND` field with values mapped to our zone scale:
+| PROB_4BAND | zone_number | Planning meaning |
+|---|---|---|
+| High | 3 | High risk — most restrictive |
+| Medium | 2 | Medium risk |
+| Low | 1 | Low risk |
+| Very Low | 1 | Low risk |
 
-**Key columns used:** `pcd` (postcode), `lat` (latitude), `long` (longitude)
-
-**Licence:** Open Government Licence v3.0
-
----
-
-## 3. Flood Risk Zones (Environment Agency)
-
-**Used for:** flood zone flag (1/2/3) per postcode
-**Script:** `scripts/ingest_flood.py`
-
-1. Go to: https://www.data.gov.uk/dataset/flood-risk-zones
-2. Download **Flood Zone 2** and **Flood Zone 3** shapefiles separately.
-   - Look for the England-wide datasets (not regional)
-   - Each download is a ZIP containing `.shp`, `.dbf`, `.prj`, `.shx` files
-3. Extract and place at:
-   - `backend/data/flood/Flood_Zone_2.shp` (+ accompanying files)
-   - `backend/data/flood/Flood_Zone_3.shp` (+ accompanying files)
-
-**Licence:** Open Government Licence v3.0
-
-> Areas **not covered** by Flood Zone 2 or 3 are treated as Flood Zone 1
-> (lowest risk) — this is handled automatically in the PostGIS query.
+Areas with no polygon default to zone 1 (handled in PostGIS query).
 
 ---
 
-## 4. Conservation Areas
-
-**Used for:** conservation area flag per postcode
-**Script:** `scripts/ingest_conservation.py`
-
-1. Go to: https://www.data.gov.uk/dataset/conservation-areas
-2. Download the **GeoJSON** or **shapefile** for England.
-   - If only a shapefile is available, `ogr2ogr` handles it fine.
-3. Place at `backend/data/conservation/conservation_areas.geojson`
-   (or `.shp` — update the `--file` argument accordingly)
-
-**Licence:** Open Government Licence v3.0
+### 2. Conservation Areas — `Conservation_Areas.shp`
+**Source:** Historic England
+**CRS:** British National Grid — converted automatically by ogr2ogr
+**Coverage:** England-wide (Southwark areas included)
 
 ---
 
-## 5. Green Belt
-
-**Used for:** greenbelt flag per postcode
-**Script:** `scripts/ingest_greenbelt.py`
-
-1. Go to: https://www.data.gov.uk/dataset/green-belt-england
-2. Download the England-wide **shapefile**.
-3. Extract and place at:
-   - `backend/data/greenbelt/greenbelt.shp` (+ accompanying files)
-
-**Licence:** Open Government Licence v3.0
+### 3. Green Belt — `England_Green_Belt_2024_25_WGS84.shp`
+**Source:** DLUHC — England Green Belt 2024-25
+**CRS:** WGS84 already — no conversion needed
+**Note:** Southwark has no greenbelt, so all Southwark postcodes will return `false`.
+This is correct behaviour.
 
 ---
 
-## 6. Article 4 Direction Areas
+### 4. Article 4 Directions — `article4_directions.geojson`
+**Source:** Planning Data (DLUHC)
+**CRS:** WGS84 — coordinates confirmed in London range
+**Features:** 480 polygons
 
-**Used for:** Article 4 zone flag per postcode
-**Script:** `scripts/ingest_article4.py`
+---
 
-1. Go to: https://www.data.gov.uk/dataset/article-4-direction-areas
-2. Download the **GeoJSON** or **shapefile**.
-3. Place at `backend/data/article4/article4_directions.geojson`
+### 5. Price Paid Data — `pp-complete.csv`
+**Source:** Land Registry — Complete dataset
+**Size:** 5 GB, all transactions since 1995
+The ingestion script filters to last 5 years automatically.
 
-**Licence:** Open Government Licence v3.0
+---
+
+### 6. ONS Postcode Directory — `ONSPD_NOV_2025_UK.csv`
+**Source:** ONS Geography — November 2025 release
+**Size:** 1.3 GB
+**Key columns:** `pcds` (postcode with space), `lat`, `long`
 
 ---
 
 ## Prerequisites before running ingestion scripts
 
 ### Install GDAL / ogr2ogr
-The spatial ingestion scripts use `ogr2ogr` to load shapefiles into PostGIS.
+Required for loading shapefiles into PostGIS.
 
 **macOS:**
 ```bash
@@ -150,63 +112,44 @@ pip install -r requirements.txt
 ```
 
 ### Supabase database
-Ensure your `.env` is filled in with the Supabase `DATABASE_URL`, then run:
+Ensure your `.env` is filled in with `DATABASE_URL`, then:
 ```bash
 python scripts/setup_db.py
 ```
-This enables PostGIS and creates all required tables.
 
 ---
 
-## Ingestion order
+## Ingestion commands (use actual filenames)
 
-Run in this exact order:
+Run from the `backend/` directory in this exact order:
 
 ```bash
-# Spatial constraint layers
+# 1. Flood risk (single RoFRS file — not separate FZ2/FZ3)
 python scripts/ingest_flood.py \
-    --fz2 data/flood/Flood_Zone_2.shp \
-    --fz3 data/flood/Flood_Zone_3.shp
+    --file data/flood/RoFRS_London.shp
 
+# 2. Conservation areas (shapefile, not GeoJSON)
 python scripts/ingest_conservation.py \
-    --file data/conservation/conservation_areas.geojson
+    --file data/conservation/Conservation_Areas.shp
 
+# 3. Green belt
 python scripts/ingest_greenbelt.py \
-    --file data/greenbelt/greenbelt.shp
+    --file data/greenbelt/England_Green_Belt_2024_25_WGS84.shp
 
+# 4. Article 4 directions
 python scripts/ingest_article4.py \
     --file data/article4/article4_directions.geojson
 
-# Price paid data
+# 5. Price paid data
 python scripts/ingest_price_paid.py \
     --csv data/price_paid/pp-complete.csv \
-    --postcodes data/postcodes/ONSPD_latest.csv
+    --postcodes data/postcodes/ONSPD_NOV_2025_UK.csv
 
-# IBex planning applications
-# Replace LA codes with your target boroughs (ONS Local Authority codes)
+# 6. IBex planning applications — Southwark only
 python scripts/ingest_ibex.py \
-    --las E09000033,E09000022,E09000032 \
-    --postcodes data/postcodes/ONSPD_latest.csv \
+    --las E09000028 \
+    --postcodes data/postcodes/ONSPD_NOV_2025_UK.csv \
     --years 5
 ```
 
-Once all ingestion is complete, proceed to the ML training guide.
-
----
-
-## Finding Local Authority codes for IBex
-
-Use ONS Local Authority codes (format: `E09xxxxxx` for London boroughs).
-
-Common London boroughs:
-| Borough | Code |
-|---|---|
-| Westminster | E09000033 |
-| Camden | E09000007 |
-| Hackney | E09000012 |
-| Tower Hamlets | E09000030 |
-| Southwark | E09000028 |
-| Lambeth | E09000022 |
-| Islington | E09000019 |
-
-Full list: https://geoportal.statistics.gov.uk (search "Local Authority Districts")
+Once complete, proceed to `docs/ml-training.md`.

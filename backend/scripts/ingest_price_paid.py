@@ -49,9 +49,10 @@ async def create_table(conn: asyncpg.Connection):
 
 async def ingest(csv_path: str, postcode_csv: str, db_url: str):
     print("Loading postcode → lat/lon lookup...")
-    pc = pd.read_csv(postcode_csv, usecols=["pcd", "lat", "long"], dtype=str)
-    pc["pcd"] = pc["pcd"].str.replace(" ", "").str.upper()
-    pc_lookup = pc.set_index("pcd")[["lat", "long"]].to_dict("index")
+    # ONSPD uses 'pcds' for the formatted postcode (e.g. "SW1A 1AA")
+    pc = pd.read_csv(postcode_csv, usecols=["pcds", "lat", "long"], dtype=str)
+    pc["pcds"] = pc["pcds"].str.replace(" ", "").str.upper()
+    pc_lookup = pc.set_index("pcds")[["lat", "long"]].to_dict("index")
 
     print("Loading Price Paid CSV (this may take a while)...")
     df = pd.read_csv(csv_path, header=None, names=PP_COLUMNS, dtype=str)
