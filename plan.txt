@@ -1,0 +1,267 @@
+PLANPILOT AI – FULL MVP BUILD PLAN (ML + GEMINI)
+
+OBJECTIVE Build an autonomous planning intelligence platform where a
+user inputs a UK postcode and receives: 1. Planning constraint flags 2.
+Flood risk classification 3. Local approval rate 4. Average decision
+time 5. Local property price metrics 6. Area EPC performance 7. ML-based
+Approval Probability 8. Development Viability Score 9. AI-generated
+professional planning assessment
+
+SYSTEM ARCHITECTURE
+
+Frontend: - Next.js (App Router) - Tailwind CSS - Mapbox / Leaflet -
+Dashboard UI - Supabase JS client (auth)
+
+Backend: - FastAPI (Python) - Supabase (PostgreSQL + PostGIS extension) -
+asyncpg for DB connection - REST API
+
+Auth: - Supabase Auth on the frontend (email/password or magic link) -
+JWT issued by Supabase, validated in FastAPI middleware using the Supabase
+JWT secret from .env - All /api/v1/* endpoints require Authorization:
+Bearer <token> header except /health
+
+ML Layer: - XGBoost - scikit-learn - joblib (model persistence)
+
+LLM Layer: - Google Gemini 2.0 Flash - Used for structured planning
+intelligence narrative - SDK: google-generativeai - Config: GEMINI_API_KEY
+
+DATABASE NOTES
+- Supabase provides managed PostgreSQL with PostGIS available as an extension.
+- Enable PostGIS via: CREATE EXTENSION IF NOT EXISTS postgis;
+- Loading large shapefiles (flood zones, greenbelt, etc.) requires the direct
+  Postgres connection string from Supabase project settings, using ogr2ogr or psql.
+- No local Docker needed for the database.
+
+DATA SOURCES
+- EPC API (DLUHC) - energy performance certificates
+- Flood Risk dataset (data.gov.uk)
+- Article 4 dataset (data.gov.uk)
+- Conservation area dataset (data.gov.uk)
+- Green belt dataset (data.gov.uk)
+- OS Data Hub - geocoding (postcode -> lat/lon)
+- Price Paid Data (CSV, Land Registry)
+- IBex API - historical planning applications
+
+SYSTEM PIPELINE
+Postcode Input → Auth (Supabase JWT) → Geocoding (OS API) →
+Geospatial Constraint Engine (PostGIS) → Area Planning & Market Metrics →
+XGBoost Approval Prediction → Viability Score Computation →
+Gemini 2.0 Flash Planning Intelligence Summary → Frontend Dashboard
+
+PHASE 1 – DATA INGESTION
+- Enable PostGIS on Supabase project.
+- Load flood_zones, conservation_areas, greenbelt_areas, article4_zones
+  into Supabase PostGIS using ogr2ogr with the direct Postgres URI.
+- Enable spatial indexing and align SRID to 4326.
+- Load Price Paid Data with postcode, price, date, property_type, price_per_m2.
+- Pull 3–5 years of IBex historical data for selected boroughs.
+
+PHASE 2 – FEATURE ENGINEERING
+For each historical application:
+
+Geospatial Features:
+- Flood zone (1/2/3)
+- In conservation area (0/1)
+- In greenbelt (0/1)
+- In article4 zone (0/1)
+
+Area Planning Features (500m radius):
+- Local approval rate
+- Avg decision time
+- Count of similar application types nearby
+
+Market Features:
+- Avg price per m2 nearby
+- Price trend last 24 months
+- Avg EPC rating nearby
+
+Target: Approved = 1, Refused = 0
+
+PHASE 3 – ML MODEL TRAINING (XGBoost)
+- Train XGBClassifier with engineered features.
+- Evaluate using ROC-AUC.
+- Save model using joblib as planning_model.pkl.
+
+CLOUD TRAINING (Google Cloud)
+- Google Cloud Vertex AI for managed GPU training if needed.
+- GCS for datasets, checkpoints, and model artifacts.
+- Steps: create GCP project → upload dataset to GCS → containerise training
+  code → configure Vertex AI job → run and save artifacts → deploy or load
+  planning_model.pkl in FastAPI at startup.
+
+PHASE 4 – REAL-TIME ANALYSIS ENDPOINT
+
+GET /api/v1/analyze?postcode=SW1A1AA
+Authorization: Bearer <supabase-jwt>
+
+Flow:
+1. Validate Supabase JWT
+2. Geocode postcode → lat/lon (OS Data Hub)
+3. Compute constraint flags and flood risk (PostGIS)
+4. Compute area approval rate and avg decision time (IBex data)
+5. Compute avg EPC and avg price per m2
+6. Build ML feature vector
+7. Load trained model → predict approval probability
+
+Response:
+{
+  "postcode": "SW1A 1AA",
+  "location": {
+    "lat": 51.5014,
+    "lon": -0.1419,
+    "district": "City of Westminster",
+    "ward": "St James's"
+  },
+  "constraints": {
+    "flood_zone": 1,
+    "in_conservation_area": true,
+    "in_greenbelt": false,
+    "in_article4_zone": true
+  },
+  "planning_metrics": {
+    "local_approval_rate": 0.73,
+    "avg_decision_time_days": 68,
+    "similar_applications_nearby": 12
+  },
+  "market_metrics": {
+    "avg_price_per_m2": 12500,
+    "price_trend_24m": 0.05,
+    "avg_epc_rating": "C"
+  },
+  "ml_prediction": {
+    "approval_probability": 0.67
+  },
+  "viability_score": 62,
+  "viability_breakdown": {
+    "base_score": 40.2,
+    "constraint_penalty": -15,
+    "flood_penalty": 0,
+    "market_strength_bonus": 8
+  }
+}
+
+PHASE 5 – DEVELOPMENT VIABILITY SCORE
+viability_score = (approval_probability * 60) - constraint_penalty
+                  - flood_penalty + market_strength_bonus
+Normalize to 0–100.
+
+PHASE 6 – GEMINI 2.0 FLASH INTEGRATION
+
+GET /api/v1/report?postcode=SW1A1AA
+Authorization: Bearer <supabase-jwt>
+
+- Separate endpoint from /analyze (Gemini call is slow, ~3–8s).
+- Frontend shows spinner on AI panel while /analyze data renders immediately.
+- Install google-generativeai SDK.
+- Configure using GEMINI_API_KEY.
+
+Prompt structure:
+- Provide structured data from /analyze response.
+- Request: 1. Overall development outlook 2. Key risks
+  3. Strategic recommendation 4. Risk mitigation suggestions
+- Instruct model to only use provided data (no hallucination).
+
+Response:
+{
+  "postcode": "SW1A 1AA",
+  "report": {
+    "overall_outlook": "...",
+    "key_risks": ["...", "..."],
+    "strategic_recommendation": "...",
+    "risk_mitigation": ["...", "..."]
+  },
+  "generated_at": "2026-02-21T12:00:00Z"
+}
+
+HEALTH ENDPOINT
+
+GET /api/v1/health  (no auth required)
+
+Response:
+{
+  "status": "ok",
+  "model_loaded": true,
+  "db_connected": true
+}
+
+API ENDPOINTS SUMMARY
+- GET  /api/v1/health            No auth. Backend health check.
+- GET  /api/v1/analyze?postcode= Auth required. Full data pipeline.
+- GET  /api/v1/report?postcode=  Auth required. Gemini AI report.
+
+FRONTEND UX FLOW
+1. User signs in via Supabase Auth → receives JWT.
+2. User submits postcode → frontend calls /analyze with JWT header.
+3. Show skeleton loaders for all panels.
+4. When /analyze resolves → populate map, metrics, constraints, scores.
+5. In parallel, call /report → show spinner on "AI Planning Report" panel.
+6. When /report resolves → populate Gemini narrative.
+
+FRONTEND STRUCTURE
+Top: Postcode input + analyse button
+
+Main Grid:
+  Left:  Interactive map with overlays (flood zones, conservation areas, greenbelt)
+  Right: Approval Probability | Viability Score | Climate Risk |
+         Constraints | Avg Decision Time | Avg EPC | Avg Price
+
+Bottom: AI Planning Intelligence Report (Gemini output)
+
+PROJECT STRUCTURE
+hacklondon-26/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── middleware/
+│   │   │   └── auth.py          # Supabase JWT validation
+│   │   ├── api/routes/
+│   │   │   ├── analyze.py
+│   │   │   ├── report.py
+│   │   │   └── health.py
+│   │   ├── services/
+│   │   │   ├── geocoding.py     # OS Data Hub → lat/lon
+│   │   │   ├── constraints.py   # PostGIS spatial queries
+│   │   │   ├── planning.py      # IBex approval rate & decision time
+│   │   │   ├── market.py        # Price Paid + EPC
+│   │   │   ├── ml.py            # XGBoost predict
+│   │   │   ├── viability.py     # Score formula
+│   │   │   └── gemini.py        # Gemini 2.0 Flash report
+│   │   ├── schemas/
+│   │   │   └── models.py        # Pydantic request/response models
+│   │   └── db/
+│   │       └── database.py      # asyncpg connection to Supabase
+│   ├── scripts/
+│   │   ├── ingest_flood.py
+│   │   ├── ingest_conservation.py
+│   │   ├── ingest_greenbelt.py
+│   │   ├── ingest_article4.py
+│   │   ├── ingest_price_paid.py
+│   │   └── train_model.py
+│   ├── ml/
+│   │   └── planning_model.pkl
+│   ├── requirements.txt
+│   └── .env.example
+└── frontend/                    # Next.js app
+
+ENVIRONMENT VARIABLES (.env)
+SUPABASE_URL=
+SUPABASE_JWT_SECRET=
+DATABASE_URL=               # Direct Postgres URI from Supabase
+GEMINI_API_KEY=
+OS_API_KEY=
+EPC_API_KEY=
+IBEX_API_KEY=
+
+DEMO PREPARATION
+- Show ROC-AUC score
+- Show feature importance chart
+- Live postcode test
+- Clean AI-generated report
+
+PITCH POSITIONING
+"This platform autonomously fuses UK planning data, geospatial constraints,
+climate risk, and market intelligence into a machine-learning-driven approval
+prediction system. We use Supabase for secure, scalable data infrastructure
+and Google Gemini 2.0 Flash to generate a structured, professional planning
+brief in seconds."
