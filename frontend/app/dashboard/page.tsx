@@ -142,6 +142,45 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* Summary Banner */}
+        {!loading && analyzeData && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mt-6 border-4 border-slate-800 bg-slate-900 text-white"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-y-4 md:divide-y-0 md:divide-x-4 divide-white/10">
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Location</p>
+                <p className="text-2xl font-black">{analyzeData.postcode}</p>
+                <p className="text-xs opacity-50 mt-1">{analyzeData.location.district}</p>
+              </div>
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Approval Chance</p>
+                <p className={`text-2xl font-black ${analyzeData.ml_prediction.approval_probability >= 0.7 ? 'text-green-400' : analyzeData.ml_prediction.approval_probability >= 0.4 ? 'text-amber-400' : 'text-red-400'}`}>
+                  {(analyzeData.ml_prediction.approval_probability * 100).toFixed(1)}%
+                </p>
+                <p className="text-xs opacity-50 mt-1">ML Prediction</p>
+              </div>
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Viability Score</p>
+                <p className={`text-2xl font-black ${analyzeData.viability_score >= 70 ? 'text-green-400' : analyzeData.viability_score >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
+                  {analyzeData.viability_score}<span className="text-sm opacity-60">/100</span>
+                </p>
+                <p className="text-xs opacity-50 mt-1">Overall Rating</p>
+              </div>
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Avg Price/m²</p>
+                <p className="text-2xl font-black">£{analyzeData.market_metrics.avg_price_per_m2.toLocaleString('en-GB')}</p>
+                <p className={`text-xs mt-1 ${analyzeData.market_metrics.price_trend_24m >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {analyzeData.market_metrics.price_trend_24m >= 0 ? '▲' : '▼'} {Math.abs(analyzeData.market_metrics.price_trend_24m * 100).toFixed(1)}% 24m trend
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Results Grid */}
         {(loading || analyzeData) && (
           <div className="mt-8 md:mt-12 space-y-8">

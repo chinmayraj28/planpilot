@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
-import { TrendingUp, TrendingDown, PoundSterling, Zap } from 'lucide-react'
+import { TrendingUp, TrendingDown, PoundSterling, Zap, AlertTriangle } from 'lucide-react'
 
 interface MarketMetricsProps {
   metrics: {
@@ -12,19 +12,25 @@ interface MarketMetricsProps {
   }
 }
 
-const epcColors: { [key: string]: string } = {
-  A: 'bg-green-700 border-green-900 text-white',
-  B: 'bg-green-500 border-green-700 text-white',
-  C: 'bg-green-300 border-green-500 text-black',
-  D: 'bg-amber-300 border-amber-500 text-black',
-  E: 'bg-amber-500 border-amber-700 text-white',
-  F: 'bg-red-500 border-red-700 text-white',
-  G: 'bg-red-700 border-red-900 text-white',
+const epcConfig: Record<string, { bar: string; label: string }> = {
+  A: { bar: 'bg-green-700', label: 'Excellent' },
+  B: { bar: 'bg-green-500', label: 'Very Good' },
+  C: { bar: 'bg-lime-500', label: 'Good' },
+  D: { bar: 'bg-amber-400', label: 'Average' },
+  E: { bar: 'bg-amber-600', label: 'Below Average' },
+  F: { bar: 'bg-red-500', label: 'Poor' },
+  G: { bar: 'bg-red-700', label: 'Very Poor' },
+}
+
+const epcWidth: Record<string, string> = {
+  A: 'w-full', B: 'w-5/6', C: 'w-4/6', D: 'w-3/6', E: 'w-2/6', F: 'w-1.5/6', G: 'w-1/6',
 }
 
 export function MarketMetrics({ metrics }: MarketMetricsProps) {
-  const trendPercentage = (metrics.price_trend_24m * 100).toFixed(1)
-  const isPositiveTrend = metrics.price_trend_24m >= 0
+  const trendPct = metrics.price_trend_24m * 100
+  const isPositive = metrics.price_trend_24m >= 0
+  const isAnomaly = Math.abs(trendPct) > 30
+  const epc = epcConfig[metrics.avg_epc_rating]
 
   return (
     <motion.div
@@ -34,10 +40,8 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
       className="swiss-card swiss-diagonal"
     >
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">
-          Market Metrics
-        </h3>
-        <InfoTooltip text="Local property market data including prices, trends, and energy efficiency." />
+        <h3 className="text-lg font-black uppercase tracking-tight">Market Metrics</h3>
+        <InfoTooltip text="Local property market data including prices, trends, and energy efficiency ratings." />
       </div>
 
       <div className="space-y-6">
@@ -47,16 +51,12 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
             <PoundSterling className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold opacity-60">
-                Avg Price per m²
-              </span>
-              <InfoTooltip text="Average property sale price per square meter in this postcode area over the past 12 months." />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs uppercase tracking-widest font-bold opacity-60">Avg Price per m²</span>
+              <InfoTooltip text="Average residential sale price per square metre from Land Registry data within this postcode area." />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black">
-                £{metrics.avg_price_per_m2.toLocaleString('en-GB')}
-              </span>
+              <span className="text-4xl font-black">£{metrics.avg_price_per_m2.toLocaleString('en-GB')}</span>
               <span className="text-sm opacity-60">/m²</span>
             </div>
           </div>
@@ -65,31 +65,27 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
         {/* Price Trend */}
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
-            {isPositiveTrend ? (
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            ) : (
-              <TrendingDown className="w-6 h-6 text-red-600" />
-            )}
+            {isPositive
+              ? <TrendingUp className="w-6 h-6 text-green-600" />
+              : <TrendingDown className="w-6 h-6 text-red-600" />}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold opacity-60">
-                24-Month Trend
-              </span>
-              <InfoTooltip text="Percentage change in average property prices over the past 24 months." />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs uppercase tracking-widest font-bold opacity-60">24-Month Trend</span>
+              <InfoTooltip text="Percentage change in average sale prices over the past 24 months." />
             </div>
             <div className="flex items-baseline gap-2">
-              <span
-                className={`text-4xl font-black ${
-                  isPositiveTrend ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                {isPositiveTrend ? '+' : ''}{trendPercentage}%
+              <span className={`text-4xl font-black ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {isPositive ? '+' : ''}{trendPct.toFixed(1)}%
               </span>
-              <span className="text-sm opacity-60">
-                {isPositiveTrend ? 'growth' : 'decline'}
-              </span>
+              <span className="text-sm opacity-60">{isPositive ? 'growth' : 'decline'}</span>
             </div>
+            {isAnomaly && (
+              <div className="flex items-center gap-2 mt-2 text-amber-600">
+                <AlertTriangle className="w-3 h-3" />
+                <span className="text-xs">Extreme value — may reflect limited sample size</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -99,24 +95,34 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
             <Zap className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold opacity-60">
-                Avg EPC Rating
-              </span>
-              <InfoTooltip text="Average Energy Performance Certificate rating for properties in this area. A (best) to G (worst)." />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs uppercase tracking-widest font-bold opacity-60">Avg EPC Rating</span>
+              <InfoTooltip text="Average Energy Performance Certificate rating for residential properties in this area. A (best) to G (worst)." />
             </div>
-            <div className="flex items-center gap-4">
-              <span
-                className={`inline-block px-6 py-3 border-4 text-3xl font-black ${
-                  epcColors[metrics.avg_epc_rating] || 'bg-gray-300 border-gray-500'
-                }`}
-              >
-                {metrics.avg_epc_rating}
-              </span>
-              <span className="text-sm opacity-60">
-                {metrics.avg_epc_rating <= 'C' ? 'Good efficiency' : metrics.avg_epc_rating <= 'E' ? 'Moderate efficiency' : 'Poor efficiency'}
-              </span>
-            </div>
+            {metrics.avg_epc_rating === 'N/A' ? (
+              <div>
+                <span className="text-2xl font-black opacity-40">N/A</span>
+                <p className="text-xs opacity-40 mt-1">No residential EPC data — likely commercial area</p>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-4 mb-2">
+                  <span className="text-4xl font-black">{metrics.avg_epc_rating}</span>
+                  <span className="text-sm opacity-60">{epc?.label}</span>
+                </div>
+                <div className="flex gap-1 h-3">
+                  {['A','B','C','D','E','F','G'].map(r => (
+                    <div
+                      key={r}
+                      className={`flex-1 border border-swiss-black/20 ${epcConfig[r]?.bar} ${r === metrics.avg_epc_rating ? 'opacity-100 ring-2 ring-swiss-black' : 'opacity-30'}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-between text-xs opacity-30 mt-1">
+                  <span>A</span><span>G</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

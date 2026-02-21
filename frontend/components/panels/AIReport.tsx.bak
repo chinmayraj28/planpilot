@@ -107,7 +107,7 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         </div>
 
         {/* 03 Strategic Recommendation */}
-        <div>
+        <div className="border-l-4 border-slate-900 pl-6 py-2 bg-slate-50">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-slate-700 text-xs font-black tracking-widest">03</span>
             <div className="flex items-center gap-2">
@@ -115,11 +115,9 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">Strategic Recommendation</h4>
             </div>
           </div>
-          <div className="border-l-4 border-slate-900 pl-6 py-2 bg-slate-50">
-            <p className="text-sm leading-relaxed text-slate-900 font-semibold">
-              {report.strategic_recommendation}
-            </p>
-          </div>
+          <p className="text-sm leading-relaxed text-slate-900 font-semibold">
+            {report.strategic_recommendation}
+          </p>
         </div>
 
         {/* 04 Risk Mitigation */}

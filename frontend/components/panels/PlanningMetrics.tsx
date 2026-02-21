@@ -13,7 +13,15 @@ interface PlanningMetricsProps {
 }
 
 export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
-  const approvalPercentage = (metrics.local_approval_rate * 100).toFixed(1)
+  const approvalPct = (metrics.local_approval_rate * 100).toFixed(1)
+  const approvalContext = metrics.local_approval_rate >= 0.8 ? { label: 'Very High', cls: 'text-green-600' }
+    : metrics.local_approval_rate >= 0.65 ? { label: 'Above Average', cls: 'text-green-600' }
+    : metrics.local_approval_rate >= 0.5 ? { label: 'Average', cls: 'text-amber-500' }
+    : { label: 'Below Average', cls: 'text-red-600' }
+
+  const decisionContext = metrics.avg_decision_time_days <= 70 ? { label: 'Fast', cls: 'text-green-600' }
+    : metrics.avg_decision_time_days <= 105 ? { label: 'Typical', cls: 'text-amber-500' }
+    : { label: 'Slow', cls: 'text-red-600' }
 
   return (
     <motion.div
@@ -23,10 +31,8 @@ export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
       className="swiss-card"
     >
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">
-          Planning Metrics
-        </h3>
-        <InfoTooltip text="Historical planning data for this local authority area." />
+        <h3 className="text-lg font-black uppercase tracking-tight">Planning Metrics</h3>
+        <InfoTooltip text="Historical planning application data within 500m radius over the last 5 years." />
       </div>
 
       <div className="space-y-6">
@@ -36,28 +42,20 @@ export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
             <CheckCircle className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold opacity-60">
-                Local Approval Rate
-              </span>
-              <InfoTooltip text="Percentage of planning applications approved by the local authority in the past 12 months." />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs uppercase tracking-widest font-bold opacity-60">Local Approval Rate</span>
+              <InfoTooltip text="Percentage of planning applications approved within 500m over the last 5 years." />
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black">{approvalPercentage}%</span>
-              <span className="text-sm opacity-60">of applications</span>
+            <div className="flex items-baseline gap-3">
+              <span className="text-4xl font-black">{approvalPct}%</span>
+              <span className={`text-xs font-black uppercase tracking-wider ${approvalContext.cls}`}>{approvalContext.label}</span>
             </div>
-            <div className="mt-3 h-2 border-2 border-swiss-black bg-swiss-muted overflow-hidden">
+            <div className="mt-2 h-1.5 bg-swiss-muted border border-swiss-black overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${approvalPercentage}%` }}
+                animate={{ width: `${approvalPct}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
-                className={`h-full ${
-                  metrics.local_approval_rate >= 0.7
-                    ? 'bg-green-600'
-                    : metrics.local_approval_rate >= 0.5
-                    ? 'bg-amber-500'
-                    : 'bg-red-600'
-                }`}
+                className={`h-full ${metrics.local_approval_rate >= 0.65 ? 'bg-green-600' : metrics.local_approval_rate >= 0.5 ? 'bg-amber-500' : 'bg-red-600'}`}
               />
             </div>
           </div>
@@ -69,16 +67,16 @@ export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
             <Clock className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold opacity-60">
-                Avg Decision Time
-              </span>
-              <InfoTooltip text="Average number of days from submission to decision for planning applications in this area." />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs uppercase tracking-widest font-bold opacity-60">Avg Decision Time</span>
+              <InfoTooltip text="Average days from application submission to decision. Statutory target is 8 weeks (56 days) for minor applications." />
             </div>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-3">
               <span className="text-4xl font-black">{Math.round(metrics.avg_decision_time_days)}</span>
               <span className="text-sm opacity-60">days</span>
+              <span className={`text-xs font-black uppercase tracking-wider ${decisionContext.cls}`}>{decisionContext.label}</span>
             </div>
+            <p className="text-xs opacity-40 mt-1">Statutory target: 56 days</p>
           </div>
         </div>
 
@@ -88,15 +86,14 @@ export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
             <FileSearch className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-widest font-bold opacity-60">
-                Similar Applications
-              </span>
-              <InfoTooltip text="Number of similar planning applications submitted within 1km in the past 24 months." />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs uppercase tracking-widest font-bold opacity-60">Similar Applications</span>
+              <InfoTooltip text="Total planning applications within 500m in the last 5 years. Higher count = more established planning precedent." />
             </div>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-3">
               <span className="text-4xl font-black">{metrics.similar_applications_nearby}</span>
               <span className="text-sm opacity-60">nearby</span>
+              <span className="text-xs opacity-40">(500m · 5yr)</span>
             </div>
           </div>
         </div>

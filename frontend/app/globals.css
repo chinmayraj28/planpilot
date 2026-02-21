@@ -107,6 +107,30 @@
   .swiss-focus {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-swiss-accent focus-visible:ring-offset-2;
   }
+
+  /* Dark card */
+  .swiss-card-dark {
+    @apply border-4 border-swiss-black bg-swiss-black text-swiss-white p-8 transition-all duration-200;
+  }
+
+  /* Constraint status rows */
+  .constraint-row {
+    @apply flex items-center gap-4 p-4 border-l-4;
+  }
+  .constraint-row-safe {
+    @apply constraint-row border-green-500 bg-green-50;
+  }
+  .constraint-row-warn {
+    @apply constraint-row border-amber-500 bg-amber-50;
+  }
+  .constraint-row-danger {
+    @apply constraint-row border-red-500 bg-red-50;
+  }
+
+  /* Verdict badge */
+  .verdict-strong { @apply bg-green-600 text-white px-3 py-1 text-xs font-black uppercase tracking-widest; }
+  .verdict-moderate { @apply bg-amber-500 text-white px-3 py-1 text-xs font-black uppercase tracking-widest; }
+  .verdict-caution { @apply bg-red-600 text-white px-3 py-1 text-xs font-black uppercase tracking-widest; }
 }
 
 /* Leaflet map styles */
