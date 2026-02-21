@@ -1,0 +1,16 @@
+Instructions: run backend and frontend in separate terminals.
+
+Backend (terminal 1):
+cd /Users/rohitaromal/University/hacklondon-26/backend
+source venv/bin/activate
+uvicorn app.main:app --reload
+
+Frontend (terminal 2):
+cd /Users/rohitaromal/University/hacklondon-26/frontend
+# (only needed the first time) npm install
+npm run dev
+
+Notes:
+- Backend default: http://localhost:8000
+- Frontend default: http://localhost:3000
+- If you change ports or env vars, update the frontend `.env` or run with NEXT_PUBLIC_BACKEND_URL.
