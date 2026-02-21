@@ -84,10 +84,7 @@ async def report(
     # Fall back to running the full pipeline if called independently.
     analysis = cache.get_analysis(postcode) or await _run_analysis(postcode)
 
-    try:
-        report_data = await generate_report(analysis)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Gemini error: {e}")
+    report_data = await generate_report(analysis)
 
     return ReportResponse(
         postcode=postcode.upper().strip(),

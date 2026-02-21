@@ -43,8 +43,8 @@ def compute_viability(
 
     breakdown = {
         "base_score": round(base_score, 2),
-        "constraint_penalty": -round(constraint_penalty, 2),
-        "flood_penalty": -round(flood_penalty, 2),
+        "constraint_penalty": -round(constraint_penalty, 2) if constraint_penalty else 0,
+        "flood_penalty": -round(flood_penalty, 2) if flood_penalty else 0,
         "market_strength_bonus": market_strength_bonus,
     }
     return viability_score, breakdown
