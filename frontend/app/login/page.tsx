@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Mail, Lock, Chrome, Github } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Chrome } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [githubLoading, setGithubLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Login page is always light mode
@@ -75,22 +74,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleGithubSignIn = async () => {
-    setError(null)
-    setGithubLoading(true)
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      })
-      if (error) throw error
-    } catch (err: any) {
-      setError(err.message || 'GitHub sign-in failed')
-      setGithubLoading(false)
-    }
-  }
-
   return (
     <main className="min-h-screen flex items-center justify-center bg-swiss-muted swiss-grid-pattern px-4">
       {/* Back to Home */}
@@ -135,24 +118,15 @@ export default function LoginPage() {
             )}
 
             {/* OAuth buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div>
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                disabled={googleLoading || githubLoading || loading}
-                className="border-4 border-swiss-black bg-swiss-white hover:bg-swiss-black hover:text-swiss-white transition-all duration-150 px-4 py-3.5 text-xs uppercase font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={googleLoading || loading}
+                className="w-full border-4 border-swiss-black bg-swiss-white hover:bg-swiss-black hover:text-swiss-white transition-all duration-150 px-4 py-3.5 text-xs uppercase font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Chrome className="w-4 h-4 flex-shrink-0" />
-                {googleLoading ? 'Connecting…' : 'Google'}
-              </button>
-              <button
-                type="button"
-                onClick={handleGithubSignIn}
-                disabled={googleLoading || githubLoading || loading}
-                className="border-4 border-swiss-black bg-swiss-white hover:bg-swiss-black hover:text-swiss-white transition-all duration-150 px-4 py-3.5 text-xs uppercase font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Github className="w-4 h-4 flex-shrink-0" />
-                {githubLoading ? 'Connecting…' : 'GitHub'}
+                {googleLoading ? 'Connecting…' : 'Continue with Google'}
               </button>
             </div>
 
@@ -219,6 +193,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || googleLoading}
+
                 className="w-full swiss-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
