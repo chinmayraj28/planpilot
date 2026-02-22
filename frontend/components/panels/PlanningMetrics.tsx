@@ -4,6 +4,50 @@ import { motion } from 'framer-motion'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
 import { CheckCircle, Clock, FileSearch, History } from 'lucide-react'
 
+// Decode the suffix of a planning reference (e.g. FUL, ADV, LB)
+const REF_TYPE_MAP: Record<string, string> = {
+  FUL: 'Full Planning Application',
+  OUT: 'Outline Planning',
+  ADV: 'Advertisement Consent',
+  LB: 'Listed Building Consent',
+  LBC: 'Listed Building Consent',
+  HH: 'Householder Application',
+  TPO: 'Tree Preservation Order',
+  TCA: 'Trees in Conservation Area',
+  CAC: 'Conservation Area Consent',
+  COU: 'Change of Use',
+  DEM: 'Demolition Notice',
+  CLP: 'Certificate of Lawfulness (Proposed)',
+  CLE: 'Certificate of Lawfulness (Existing)',
+  MMA: 'Minor Material Amendment',
+  NMA: 'Non-Material Amendment',
+  VAR: 'Variation of Condition',
+  REM: 'Reserved Matters',
+  PRA: 'Prior Approval',
+  TEL: 'Telecoms',
+  PA: 'Prior Approval',
+  PRE: 'Pre-Application',
+}
+
+function decodeReference(ref: string): string | null {
+  // References like "25/03433/ADV" — take the last segment after "/"
+  const parts = ref.split('/')
+  if (parts.length < 2) return null
+  const suffix = parts[parts.length - 1].toUpperCase()
+  return REF_TYPE_MAP[suffix] ?? null
+}
+
+function formatRefYear(ref: string): string | null {
+  const parts = ref.split('/')
+  if (parts.length < 1) return null
+  const y = parts[0]
+  if (y.length === 2) {
+    const num = parseInt(y)
+    return isNaN(num) ? null : `20${y}`
+  }
+  return y.length === 4 ? y : null
+}
+
 interface PlanningMetricsProps {
   metrics: {
     local_approval_rate: number
@@ -134,26 +178,35 @@ export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
                 <InfoTooltip text="Last 5 planning decisions within 200m — the closest predictor for your application." />
               </div>
               <div className="space-y-2">
-                {metrics.recent_applications.map((app, i) => (
-                  <div key={i} className="border border-swiss-black/20 dark:border-white/10 px-3 py-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold opacity-60 truncate mr-2">{app.reference}</span>
-                      <span className={`text-xs font-black uppercase px-2 py-0.5 border-2 flex-shrink-0 ${
-                        app.decision === 'approved'
-                          ? 'border-green-600 text-green-700 dark:text-green-400'
-                          : 'border-red-600 text-red-700 dark:text-red-400'
-                      }`}>
-                        {app.decision}
-                      </span>
+                {metrics.recent_applications.map((app, i) => {
+                  const decodedType = decodeReference(app.reference)
+                  const refYear = formatRefYear(app.reference)
+                  return (
+                    <div key={i} className="border border-swiss-black/20 dark:border-white/10 px-3 py-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2 min-w-0 mr-2">
+                          <span className="text-xs font-black bg-black/5 dark:bg-white/10 px-1.5 py-0.5 flex-shrink-0">{app.reference}</span>
+                          {decodedType && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-swiss-accent truncate">{decodedType}</span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 border-2 flex-shrink-0 ${
+                          app.decision === 'approved'
+                            ? 'border-green-600 text-green-700 dark:text-green-400'
+                            : 'border-red-600 text-red-700 dark:text-red-400'
+                        }`}>
+                          {app.decision}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs opacity-50 truncate mr-2">{app.application_type}</span>
+                        <span className="text-xs opacity-40 flex-shrink-0">
+                          {new Date(app.decision_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs opacity-50 truncate mr-2">{app.application_type}</span>
-                      <span className="text-xs opacity-40 flex-shrink-0">
-                        {new Date(app.decision_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>

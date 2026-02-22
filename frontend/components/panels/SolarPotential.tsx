@@ -35,10 +35,8 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
 
     const fetchPVGIS = async () => {
       try {
-        const url =
-          `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc` +
-          `?lat=${lat}&lon=${lon}&peakpower=${SYSTEM_KWP}&loss=14&outputformat=json`
-        const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+        const url = `/api/pvgis?lat=${lat}&lon=${lon}&peakpower=${SYSTEM_KWP}&loss=14`
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
         if (!res.ok) throw new Error('PVGIS non-200')
         const data = await res.json()
         const yearly = data?.outputs?.totals?.fixed?.E_y
