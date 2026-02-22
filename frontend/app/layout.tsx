@@ -15,10 +15,8 @@ export const metadata: Metadata = {
     siteName: 'PlanPilot AI',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'PlanPilot AI — Know Before You Apply',
+        url: '/logo.png',
+        alt: 'PlanPilot AI',
       },
     ],
     locale: 'en_GB',
@@ -28,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'PlanPilot AI — UK Planning Intelligence Platform',
     description: 'Constraint data, flood risk, ML approval probability, viability scoring, and AI planning advice for any UK postcode.',
-    images: ['/og-image.png'],
+    images: ['/logo.png'],
   },
 }
 
