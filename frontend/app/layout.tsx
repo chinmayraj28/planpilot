@@ -13,12 +13,6 @@ export const metadata: Metadata = {
     title: 'PlanPilot AI — UK Planning Intelligence Platform',
     description: 'Constraint data, flood risk, ML approval probability, viability scoring, and AI planning advice for any UK postcode.',
     siteName: 'PlanPilot AI',
-    images: [
-      {
-        url: '/logo.png',
-        alt: 'PlanPilot AI',
-      },
-    ],
     locale: 'en_GB',
     type: 'website',
   },
@@ -26,7 +20,6 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'PlanPilot AI — UK Planning Intelligence Platform',
     description: 'Constraint data, flood risk, ML approval probability, viability scoring, and AI planning advice for any UK postcode.',
-    images: ['/logo.png'],
   },
 }
 
