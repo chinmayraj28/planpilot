@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
       ? `${forwardedProto}://${forwardedHost}`
       : requestUrl.origin
 
+  console.log('[auth/callback] origin:', origin, '| code present:', !!code)
+  console.log('[auth/callback] incoming cookies:', request.cookies.getAll().map(c => c.name))
+
   // Create the redirect response FIRST so we can set cookies directly on it
   const response = NextResponse.redirect(new URL('/dashboard', origin))
 
@@ -27,6 +30,7 @@ export async function GET(request: NextRequest) {
               return request.cookies.getAll()
             },
             setAll(cookiesToSet) {
+              console.log('[auth/callback] setting cookies:', cookiesToSet.map(c => c.name))
               cookiesToSet.forEach(({ name, value, options }) => {
                 response.cookies.set(name, value, options)
               })
@@ -35,11 +39,17 @@ export async function GET(request: NextRequest) {
         }
       )
 
-      await supabase.auth.exchangeCodeForSession(code)
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      if (error) {
+        console.error('[auth/callback] exchangeCodeForSession error:', error.message)
+      } else {
+        console.log('[auth/callback] session established for user:', data.user?.email)
+      }
     } catch (error) {
-      console.error('Auth callback error:', error)
+      console.error('[auth/callback] unexpected error:', error)
     }
   }
 
+  console.log('[auth/callback] response cookies:', response.cookies.getAll().map(c => c.name))
   return response
 }
