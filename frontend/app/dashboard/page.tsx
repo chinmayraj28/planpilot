@@ -440,7 +440,7 @@ function DashboardContent() {
               onAnalyze={handleAnalyze}
               loading={loading}
               activeTab={activeTab}
-              setActiveTab={setActiveTab}
+              setActiveTab={(t) => { setActiveTab(t); setShowComparison(false); setShowForm(false) }}
               hasData={!!analyzeData}
               searchHistory={searchHistory}
               currentPostcode={analyzeData?.postcode}
@@ -470,7 +470,7 @@ function DashboardContent() {
                 onAnalyze={handleAnalyze}
                 loading={loading}
                 activeTab={activeTab}
-                setActiveTab={(t) => { setActiveTab(t); setSidebarOpen(false) }}
+                setActiveTab={(t) => { setActiveTab(t); setShowComparison(false); setShowForm(false); setSidebarOpen(false) }}
                 hasData={!!analyzeData}
                 searchHistory={searchHistory}
                 currentPostcode={analyzeData?.postcode}
@@ -530,7 +530,7 @@ function DashboardContent() {
             </button>
 
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setShowForm(true); setShowComparison(false) }}
               className="no-print flex items-center gap-1.5 border-2 border-black dark:border-white/20 px-3 py-2 text-xs uppercase font-bold tracking-wider hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -611,7 +611,7 @@ function DashboardContent() {
         </AnimatePresence>
 
         {/* Mobile tab navigation */}
-        {analyzeData && (
+        {(analyzeData || showComparison) && (
           <div className="flex-shrink-0 lg:hidden border-b-2 border-black/10 bg-white dark:bg-[#111] overflow-x-auto no-print">
             <div className="flex">
               {TABS.map(tab => {
@@ -619,9 +619,9 @@ function DashboardContent() {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => { setActiveTab(tab.id); setShowComparison(false); setShowForm(false) }}
                     className={`flex items-center gap-2 px-4 py-3 text-xs font-black uppercase tracking-wider whitespace-nowrap border-b-2 transition-colors ${
-                      activeTab === tab.id
+                      activeTab === tab.id && !showComparison
                         ? 'border-swiss-accent text-swiss-accent'
                         : 'border-transparent text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'
                     }`}
@@ -652,8 +652,19 @@ function DashboardContent() {
               </div>
             )}
 
+            {/* Loading state for share URL auto-analyze */}
+            {loading && !analyzeData && !showForm && !showComparison && (
+              <div className="flex flex-col items-center justify-center py-32 text-center">
+                <div className="w-12 h-12 border-4 border-black/20 dark:border-white/20 border-t-swiss-accent animate-spin rounded-full mb-6" />
+                <p className="text-xl font-black uppercase tracking-tighter opacity-60">Analyzing…</p>
+                <p className="text-sm opacity-30 mt-2">
+                  Fetching planning intelligence{searchParams.get('postcode') ? ` for ${searchParams.get('postcode')!.toUpperCase()}` : ''}
+                </p>
+              </div>
+            )}
+
             {/* Show PostcodeInput form when no data or user clicked New Analysis */}
-            {!showComparison && (showForm || !analyzeData) && (
+            {!showComparison && !loading && (showForm || !analyzeData) && (
               <div className="mb-8">
                 <PostcodeInput onAnalyze={handleAnalyze} loading={loading} token={token ?? undefined} />
                 {analyzeData && (
