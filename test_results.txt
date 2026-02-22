@@ -1,0 +1,9 @@
+All features working. Here's a summary of the test results:
+
+Postcode	Area	Approval	Viability	Notes
+SW1A 1AA	Westminster	97.0%	—	Conservation area, £37k/m², 0 nearby apps
+SE1 9NQ	Lambeth	—	—	92.3% local approval rate, 673 nearby apps, 108-day avg decision
+E1 6AN	City of London	—	—	100% local approval, 11 nearby apps, £21.7k/m²
+E14 5AB	Tower Hamlets (Canary Wharf)	87.6%	82.1	No constraints, loft_conversion + 2 storeys → -3 complexity penalty
+E14 5AB + overrides	Tower Hamlets	94.4%	70.5	Flood zone 3 + conservation overridden → -12 flood penalty, -8 constraint penalty
+XXXXXX	Invalid	404	—	"We couldn't find the postcode 'XXXXXX'. Please check it's a valid UK postcode and try again."
