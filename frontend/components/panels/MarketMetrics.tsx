@@ -44,8 +44,13 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
       transition={{ duration: 0.4, delay: 0.4 }}
       className="swiss-card swiss-diagonal"
     >
-      <div className="flex items-center justify-between mb-4 sm:mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">Market Metrics</h3>
+      <div className="flex items-start justify-between mb-4 sm:mb-8">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">Market Metrics</h3>
+          <p className="text-xs opacity-50 mt-1">
+            Source: HM Land Registry Price Paid Data + DLUHC EPC API
+          </p>
+        </div>
         <InfoTooltip text="Local property market data including prices, trends, and energy efficiency ratings." />
       </div>
 

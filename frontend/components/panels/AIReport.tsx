@@ -66,6 +66,10 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         <span className={verdictClass}>{verdict}</span>
       </div>
 
+      <p className="text-xs opacity-50 mb-4 sm:mb-6">
+        Source: Gemini 2.5 Flash (Google Generative AI). Fallback: rule-based summary if API unavailable.
+      </p>
+
       <div className="space-y-5 sm:space-y-8">
         {/* 01 Overall Outlook */}
         <div>

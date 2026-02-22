@@ -50,8 +50,11 @@ export function SchoolsPanel({ schools }: SchoolsPanelProps) {
       transition={{ duration: 0.4, delay: 0.3 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-4 sm:mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">Nearby Schools</h3>
+      <div className="flex items-start justify-between mb-4 sm:mb-8">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">Nearby Schools</h3>
+          <p className="text-xs opacity-50 mt-1">Source: OpenStreetMap via Overpass API</p>
+        </div>
         <InfoTooltip text="Schools within 0.75 miles, sourced from OpenStreetMap. Proximity to good schools is a significant driver of local property values." />
       </div>
 
@@ -89,8 +92,7 @@ export function SchoolsPanel({ schools }: SchoolsPanelProps) {
           ))}
 
           <p className="text-xs opacity-30 pt-2">
-            Source: OpenStreetMap. Ofsted ratings require the DfE GIAS dataset.
-            Schools near good catchment areas can add 5–15% to property values.
+            Ofsted ratings require the DfE GIAS dataset. Schools near good catchment areas can add 5–15% to property values.
           </p>
         </div>
       )}

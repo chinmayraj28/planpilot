@@ -36,10 +36,15 @@ export function PlanningMap({ location, postcode }: PlanningMapProps) {
       transition={{ duration: 0.4, delay: 0.6 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-black uppercase tracking-tight">
-          Location
-        </h3>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">
+            Location
+          </h3>
+          <p className="text-xs opacity-50 mt-1">
+            Source: postcodes.io (geocoding) · OpenStreetMap (tiles)
+          </p>
+        </div>
         <InfoTooltip text="Interactive map showing the postcode location and surrounding area." />
       </div>
 

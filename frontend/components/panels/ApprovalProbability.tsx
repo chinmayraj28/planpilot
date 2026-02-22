@@ -33,7 +33,10 @@ export function ApprovalProbability({ probability }: ApprovalProbabilityProps) {
         <InfoTooltip text="ML-powered prediction based on historical planning decisions in this area." />
       </div>
 
-      <h3 className="text-lg font-black uppercase tracking-tight mb-4 sm:mb-6">Approval Probability</h3>
+      <div className="mb-4 sm:mb-6">
+        <h3 className="text-lg font-black uppercase tracking-tight">Approval Probability</h3>
+        <p className="text-xs opacity-50 mt-1">Source: PlanPilot ML model (trained on IBex planning data)</p>
+      </div>
 
       <div className="flex justify-center">
         <CircularGauge value={pct} max={100} label="Approval Chance" />

@@ -58,7 +58,7 @@ const PIPELINE = [
   {
     icon: Zap,
     title: 'AI REPORT',
-    desc: 'Gemini 2.0 Flash generates strategic planning advice',
+    desc: 'Gemini 2.5 Flash generates strategic planning advice',
     color: 'bg-swiss-accent',
     detail: 'Full context prompt including constraints, metrics, and project params. Returns key risks, strategic recommendations, and mitigation steps.',
   },
@@ -97,7 +97,7 @@ export default function LandingPage() {
     { icon: TrendingUp, label: 'Market Metrics', description: 'Price trends, EPC ratings, and local property market intelligence' },
     { icon: Activity, label: 'Approval Probability', description: 'ML-powered prediction based on historical planning decisions' },
     { icon: Shield, label: 'Viability Scoring', description: 'Comprehensive 0–100 score with detailed breakdown of penalties and bonuses' },
-    { icon: FileText, label: 'AI Planning Report', description: 'Strategic recommendations and risk mitigation from Gemini 2.0' },
+    { icon: FileText, label: 'AI Planning Report', description: 'Strategic recommendations and risk mitigation from Gemini 2.5' },
     { icon: Settings2, label: 'Manual Overrides', description: 'Optionally override any auto-fetched value with your own site knowledge' },
     { icon: Layers, label: 'Project Personalisation', description: 'Application type, property type, storeys, and floor area affect predictions' },
   ]

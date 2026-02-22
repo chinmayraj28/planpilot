@@ -39,8 +39,11 @@ export function BuildCostCalculator({ avgPricePerM2 }: BuildCostCalculatorProps)
       transition={{ duration: 0.4, delay: 0.2 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-4 sm:mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">Build Cost Calculator</h3>
+      <div className="flex items-start justify-between mb-4 sm:mb-8">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">Build Cost Calculator</h3>
+          <p className="text-xs opacity-50 mt-1">Source: BCIS industry average rates (assumptions baked in)</p>
+        </div>
         <InfoTooltip text="Estimates construction costs using BCIS industry average rates. Value uplift assumes 85% of added space translates to resale value." />
       </div>
 

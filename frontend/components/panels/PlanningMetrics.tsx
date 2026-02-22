@@ -87,8 +87,13 @@ export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
       transition={{ duration: 0.4, delay: 0.3 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-4 sm:mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">Planning Metrics</h3>
+      <div className="flex items-start justify-between mb-4 sm:mb-8">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">Planning Metrics</h3>
+          <p className="text-xs opacity-50 mt-1">
+            Source: IBex Planning API (SeracTech), cached in PostGIS
+          </p>
+        </div>
         <InfoTooltip text="Historical planning application data within 500m radius over the last 5 years." />
       </div>
 

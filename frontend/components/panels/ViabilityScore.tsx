@@ -26,10 +26,13 @@ export function ViabilityScore({ score, breakdown }: ViabilityScoreProps) {
       transition={{ duration: 0.4, delay: 0.1 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-4 sm:mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">
-          Viability Score
-        </h3>
+      <div className="flex items-start justify-between mb-4 sm:mb-8">
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">
+            Viability Score
+          </h3>
+          <p className="text-xs opacity-50 mt-1">Source: PlanPilot viability model (constraints + market data)</p>
+        </div>
         <InfoTooltip text="Comprehensive 0-100 score evaluating development viability. Factors include constraints, flood risk, and market conditions." />
       </div>
 
