@@ -29,5 +29,13 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
+  // Build origin from proxy headers so redirects work behind Nginx
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const origin =
+    forwardedProto && forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : requestUrl.origin
+
+  return NextResponse.redirect(new URL('/dashboard', origin))
 }
