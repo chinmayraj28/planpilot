@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     icon: '/logo.svg',
     apple: '/logo.svg',
   },
-  metadataBase: new URL('https://planpilot.ai'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://planpilot.ddns.net'),
   openGraph: {
     title: 'PlanPilot AI — UK Planning Intelligence Platform',
     description: 'Constraint data, flood risk, ML approval probability, viability scoring, and AI planning advice for any UK postcode.',
