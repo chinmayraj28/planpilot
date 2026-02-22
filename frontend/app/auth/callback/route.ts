@@ -14,7 +14,16 @@ export async function GET(request: NextRequest) {
       : requestUrl.origin
 
   console.log('[auth/callback] origin:', origin, '| code present:', !!code)
-  console.log('[auth/callback] incoming cookies:', request.cookies.getAll().map(c => c.name))
+  console.log('[auth/callback] request.url:', request.url)
+
+  // Log raw cookie header to detect proxy corruption
+  const rawCookieHeader = request.headers.get('cookie')
+  console.log('[auth/callback] raw Cookie header:', rawCookieHeader)
+
+  const allCookies = request.cookies.getAll()
+  allCookies.forEach(c => {
+    console.log(`[auth/callback] cookie "${c.name}" value (first 80 chars):`, c.value.substring(0, 80))
+  })
 
   // Create the redirect response FIRST so we can set cookies directly on it
   const response = NextResponse.redirect(new URL('/dashboard', origin))
@@ -41,7 +50,7 @@ export async function GET(request: NextRequest) {
 
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       if (error) {
-        console.error('[auth/callback] exchangeCodeForSession error:', error.message)
+        console.error('[auth/callback] exchangeCodeForSession error:', error.message, '| status:', error.status)
       } else {
         console.log('[auth/callback] session established for user:', data.user?.email)
       }
