@@ -75,7 +75,12 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
       className="swiss-card swiss-diagonal"
     >
       <div className="flex items-center justify-between mb-4 sm:mb-8">
-        <h3 className="text-lg font-black uppercase tracking-tight">Solar Potential</h3>
+        <div>
+          <h3 className="text-lg font-black uppercase tracking-tight">Solar Potential</h3>
+          <div className="mt-1 text-xs opacity-60">
+            Source: {source === 'pvgis' ? 'EU PVGIS (server)' : 'Latitude-based estimate'}
+          </div>
+        </div>
         <InfoTooltip text={`Estimates for a ${SYSTEM_KWP}kWp south-facing PV system. ${source === 'pvgis' ? 'Data from EU PVGIS.' : 'EU PVGIS unavailable — UK latitude estimate used.'}`} />
       </div>
 
