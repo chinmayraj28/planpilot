@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.db.database import get_pool, close_pool
 from app.services.ml import load_model
-from app.api.routes import analyze, report, health
+from app.api.routes import analyze, report, health, upload
 
 
 @asynccontextmanager
@@ -36,3 +36,4 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(analyze.router, prefix="/api/v1")
 app.include_router(report.router, prefix="/api/v1")
+app.include_router(upload.router, prefix="/api/v1")

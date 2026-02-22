@@ -94,3 +94,23 @@ export interface HealthResponse {
   model_loaded: boolean
   db_connected: boolean
 }
+
+export interface DocumentExtraction {
+  success: boolean
+  filename: string
+  extracted: {
+    postcode?: string
+    application_type?: ApplicationType
+    property_type?: PropertyType
+    num_storeys?: number
+    estimated_floor_area_m2?: number
+    flood_zone?: 1 | 2 | 3
+    in_conservation_area?: boolean
+    in_greenbelt?: boolean
+    in_article4_zone?: boolean
+    epc_rating?: string
+    decision?: string
+    summary?: string
+  }
+  error?: string
+}

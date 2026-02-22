@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Mail, Lock, Chrome } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Chrome, Github } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,7 +14,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [githubLoading, setGithubLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Login page is always light mode
+  useEffect(() => {
+    document.documentElement.classList.remove('dark')
+  }, [])
 
   // Redirect if already logged in
   useEffect(() => {
@@ -60,9 +66,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) throw error
     } catch (err: any) {
@@ -71,12 +75,28 @@ export default function LoginPage() {
     }
   }
 
+  const handleGithubSignIn = async () => {
+    setError(null)
+    setGithubLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) throw error
+    } catch (err: any) {
+      setError(err.message || 'GitHub sign-in failed')
+      setGithubLoading(false)
+    }
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-swiss-muted swiss-grid-pattern">
+    <main className="min-h-screen flex items-center justify-center bg-swiss-muted swiss-grid-pattern px-4">
       {/* Back to Home */}
       <Link
         href="/"
-        className="absolute top-8 left-8 flex items-center gap-2 text-sm uppercase font-bold tracking-wider hover:text-swiss-accent transition-colors"
+        className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-sm uppercase font-bold tracking-wider hover:text-swiss-accent transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Home
@@ -89,10 +109,10 @@ export default function LoginPage() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-md mx-4"
       >
-        <div className="border-4 border-swiss-black bg-swiss-white p-12 relative">
+        <div className="border-4 border-swiss-black bg-swiss-white p-6 sm:p-12 relative">
           {/* Decorative Elements */}
-          <div className="absolute -top-4 -left-4 w-16 h-16 bg-swiss-accent" />
-          <div className="absolute -bottom-4 -right-4 w-24 h-24 border-4 border-swiss-black bg-swiss-white" />
+          <div className="hidden sm:block absolute -top-4 -left-4 w-16 h-16 bg-swiss-accent" />
+          <div className="hidden sm:block absolute -bottom-4 -right-4 w-24 h-24 border-4 border-swiss-black bg-swiss-white" />
 
           <div className="relative z-10">
             {/* Header */}
@@ -114,16 +134,27 @@ export default function LoginPage() {
               </motion.div>
             )}
 
-            {/* Google Sign In */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading || loading}
-              className="w-full border-4 border-swiss-black bg-swiss-white hover:bg-swiss-black hover:text-swiss-white transition-all duration-150 px-8 py-4 text-sm uppercase font-bold tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-            >
-              <Chrome className="w-5 h-5" />
-              {googleLoading ? 'Connecting...' : 'Continue with Google'}
-            </button>
+            {/* OAuth buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading || githubLoading || loading}
+                className="border-4 border-swiss-black bg-swiss-white hover:bg-swiss-black hover:text-swiss-white transition-all duration-150 px-4 py-3.5 text-xs uppercase font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Chrome className="w-4 h-4 flex-shrink-0" />
+                {googleLoading ? 'Connecting…' : 'Google'}
+              </button>
+              <button
+                type="button"
+                onClick={handleGithubSignIn}
+                disabled={googleLoading || githubLoading || loading}
+                className="border-4 border-swiss-black bg-swiss-white hover:bg-swiss-black hover:text-swiss-white transition-all duration-150 px-4 py-3.5 text-xs uppercase font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Github className="w-4 h-4 flex-shrink-0" />
+                {githubLoading ? 'Connecting…' : 'GitHub'}
+              </button>
+            </div>
 
             {/* Divider */}
             <div className="relative my-8">

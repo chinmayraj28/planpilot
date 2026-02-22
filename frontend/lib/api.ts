@@ -1,4 +1,4 @@
-import type { ProjectParams, ManualOverrides } from './types'
+import type { ProjectParams, ManualOverrides, DocumentExtraction } from './types'
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
 
@@ -56,3 +56,22 @@ export const fetchReport = (postcode: string, token: string) =>
 
 export const checkHealth = () =>
   fetch(`${BASE}/api/v1/health`).then(r => r.json())
+
+export const uploadDocument = async (file: File, token: string): Promise<DocumentExtraction> => {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${BASE}/api/v1/upload-document`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  })
+  if (!res.ok) {
+    let message = `Upload failed (${res.status})`
+    try {
+      const body = await res.json()
+      if (body.detail) message = body.detail
+    } catch {}
+    throw new Error(message)
+  }
+  return res.json()
+}

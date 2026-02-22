@@ -34,7 +34,7 @@ export function CircularGauge({ value, max = 100, label, size = 200 }: CircularG
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#000000"
+          className="stroke-black dark:stroke-white/20"
           strokeWidth="8"
           fill="none"
         />

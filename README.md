@@ -33,6 +33,11 @@ Getting planning permission in the UK is a **black box**. Homeowners, developers
 | **Interactive Map** | Leaflet map with nearby planning applications and constraint overlays |
 | **Project Personalisation** | Tailor predictions to your application type, property type, storeys, and floor area |
 | **Manual Overrides** | Override any of the 10 ML features with your own data for power-user analysis |
+| **Document Upload + OCR** | Upload a planning PDF or image — Gemini 2.0 Flash extracts postcode, project params, and constraints to auto-fill the form |
+| **Comparison Mode** | Compare up to 3 postcodes side-by-side with a full metric comparison table |
+| **Share / Link Results** | Copy a shareable URL that auto-triggers analysis for the same postcode and project params |
+| **Dark Mode** | Toggle between light and dark themes — persisted across sessions |
+| **CSV Export** | Download all analysis data as a structured CSV (location, constraints, market, planning, schools) |
 | **Nearby Schools** | Automatically fetches the 5 closest schools with Ofsted ratings |
 | **PDF Export** | One-click print/export of the full dashboard |
 
@@ -55,7 +60,8 @@ Getting planning permission in the UK is a **black box**. Homeowners, developers
 │  │ Geocoding│  │ ML Engine│  │ Viability│  │ Gemini 2.0 │  │
 │  │ (postcodes│  │ (XGBoost)│  │  Scorer  │  │   Flash    │  │
 │  │   .io)   │  │          │  │          │  │ AI Reports │  │
-│  └──────────┘  └──────────┘  └──────────┘  └────────────┘  │
+│  └──────────┘  └──────────┘  └──────────┘  │ + Doc OCR  │  │
+│                                            └────────────┘  │
 │                         ▼                                   │
 ├─────────────────────────────────────────────────────────────┤
 │                      DATABASE                               │
@@ -212,7 +218,7 @@ Visit **http://localhost:3000**
 hacklondon-26/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/        # analyze, report, health endpoints
+│   │   ├── api/routes/        # analyze, report, health, upload endpoints
 │   │   ├── db/                # asyncpg database pool
 │   │   ├── middleware/        # JWT authentication
 │   │   ├── schemas/           # Pydantic models
@@ -234,12 +240,15 @@ hacklondon-26/
 │   │   └── dashboard/page.tsx # Main analysis dashboard
 │   ├── components/
 │   │   ├── PostcodeInput.tsx   # Full analysis form with overrides
+│   │   ├── DocumentUpload.tsx  # Drag-and-drop OCR upload component
+│   │   ├── ComparisonMode.tsx  # Side-by-side postcode comparison
 │   │   ├── Sidebar.tsx         # Navigation + search history
 │   │   ├── map/PlanningMap.tsx # Leaflet interactive map
 │   │   ├── panels/            # Dashboard panels (6+ components)
 │   │   └── ui/                # Reusable UI components
 │   └── lib/
 │       ├── api.ts             # Backend API client
+│       ├── csv.ts             # CSV export utility
 │       ├── supabase.ts        # Auth client
 │       └── types.ts           # TypeScript type definitions
 └── README.md
@@ -269,6 +278,7 @@ hacklondon-26/
 | `GET` | `/api/v1/health` | Health check (model loaded, DB connected) |
 | `GET` | `/api/v1/analyze?postcode=...` | Full analysis with ML prediction, constraints, market data |
 | `GET` | `/api/v1/report?postcode=...` | AI-generated strategic planning report |
+| `POST` | `/api/v1/upload-document` | Upload a planning document (PDF/image) for Gemini OCR extraction |
 
 The `/analyze` endpoint supports optional query parameters:
 - **Project params**: `application_type`, `property_type`, `num_storeys`, `estimated_floor_area_m2`

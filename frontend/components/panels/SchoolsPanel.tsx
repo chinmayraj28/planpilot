@@ -17,15 +17,15 @@ interface SchoolsPanelProps {
 
 // Colour-code school type chips
 const TYPE_CHIP: Record<string, string> = {
-  'Primary':              'bg-blue-100 text-blue-800',
-  'Secondary':            'bg-purple-100 text-purple-800',
-  'Grammar School':       'bg-green-100 text-green-800',
-  'Academy':              'bg-indigo-100 text-indigo-800',
-  'Primary Academy':      'bg-indigo-100 text-indigo-800',
-  'Secondary Academy':    'bg-indigo-100 text-indigo-800',
-  'Free School':          'bg-teal-100 text-teal-800',
-  'Independent School':   'bg-amber-100 text-amber-800',
-  'Community School':     'bg-slate-100 text-slate-700',
+  'Primary':              'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  'Secondary':            'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+  'Grammar School':       'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+  'Academy':              'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+  'Primary Academy':      'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+  'Secondary Academy':    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+  'Free School':          'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+  'Independent School':   'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  'Community School':     'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300',
 }
 
 function typeChipClass(type: string): string {
@@ -50,7 +50,7 @@ export function SchoolsPanel({ schools }: SchoolsPanelProps) {
       transition={{ duration: 0.4, delay: 0.3 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4 sm:mb-8">
         <h3 className="text-lg font-black uppercase tracking-tight">Nearby Schools</h3>
         <InfoTooltip text="Schools within 0.75 miles, sourced from OpenStreetMap. Proximity to good schools is a significant driver of local property values." />
       </div>
@@ -68,7 +68,7 @@ export function SchoolsPanel({ schools }: SchoolsPanelProps) {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.05 * i }}
-              className="border-2 border-swiss-black/20 p-4 hover:border-swiss-black transition-colors"
+              className="border-2 border-swiss-black/20 dark:border-white/10 p-4 hover:border-swiss-black dark:hover:border-white/30 transition-colors"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">

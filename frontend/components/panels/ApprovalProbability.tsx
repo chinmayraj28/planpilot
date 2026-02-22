@@ -28,18 +28,18 @@ export function ApprovalProbability({ probability }: ApprovalProbabilityProps) {
       className="swiss-card overflow-hidden"
     >
       {/* Verdict strip */}
-      <div className={`-mx-8 -mt-8 mb-8 px-8 py-3 ${verdict.cls} flex items-center justify-between`}>
+      <div className={`-mx-4 -mt-4 mb-4 px-4 sm:-mx-8 sm:-mt-8 sm:mb-8 sm:px-8 py-3 ${verdict.cls} flex items-center justify-between`}>
         <span className="text-xs font-black uppercase tracking-widest">{verdict.label}</span>
         <InfoTooltip text="ML-powered prediction based on historical planning decisions in this area." />
       </div>
 
-      <h3 className="text-lg font-black uppercase tracking-tight mb-6">Approval Probability</h3>
+      <h3 className="text-lg font-black uppercase tracking-tight mb-4 sm:mb-6">Approval Probability</h3>
 
       <div className="flex justify-center">
         <CircularGauge value={pct} max={100} label="Approval Chance" />
       </div>
 
-      <div className="mt-6 pt-6 border-t-2 border-swiss-black">
+      <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-2 border-swiss-black dark:border-white/20">
         <p className="text-xs leading-relaxed opacity-60 text-center">{context}</p>
       </div>
     </motion.div>

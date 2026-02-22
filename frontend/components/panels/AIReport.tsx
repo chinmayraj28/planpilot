@@ -23,7 +23,7 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         transition={{ duration: 0.4, delay: 0.5 }}
         className="swiss-card overflow-hidden animate-pulse"
       >
-        <div className="-mx-8 -mt-8 mb-8 px-8 py-5 bg-slate-900 flex items-center gap-3">
+        <div className="-mx-4 -mt-4 mb-4 px-4 sm:-mx-8 sm:-mt-8 sm:mb-8 sm:px-8 py-5 bg-slate-900 flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-slate-300 animate-spin" />
           <h3 className="text-base font-black uppercase tracking-tight text-white">AI Planning Report</h3>
         </div>
@@ -58,7 +58,7 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
       className="swiss-card overflow-hidden"
     >
       {/* Header strip — dark slate, bleeds to card edges */}
-      <div className="-mx-8 -mt-8 mb-8 px-8 py-5 bg-slate-900 flex items-center justify-between">
+      <div className="-mx-4 -mt-4 mb-4 px-4 sm:-mx-8 sm:-mt-8 sm:mb-8 sm:px-8 py-5 bg-slate-900 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-slate-300" />
           <h3 className="text-base font-black uppercase tracking-tight text-white">AI Planning Report</h3>
@@ -66,17 +66,17 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         <span className={verdictClass}>{verdict}</span>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         {/* 01 Overall Outlook */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-slate-700 text-xs font-black tracking-widest">01</span>
+            <span className="text-slate-700 dark:text-white/40 text-xs font-black tracking-widest">01</span>
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-slate-600" />
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">Overall Outlook</h4>
+              <FileText className="w-4 h-4 text-slate-600 dark:text-white/40" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white/60">Overall Outlook</h4>
             </div>
           </div>
-          <p className="text-sm leading-relaxed pl-8 border-l-2 border-swiss-black/10 text-slate-900 font-semibold">
+          <p className="text-sm leading-relaxed pl-8 border-l-2 border-swiss-black/10 dark:border-white/10 text-slate-900 dark:text-white/80 font-semibold">
             {report.overall_outlook}
           </p>
         </div>
@@ -84,10 +84,10 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         {/* 02 Key Risks */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-slate-700 text-xs font-black tracking-widest">02</span>
+            <span className="text-slate-700 dark:text-white/40 text-xs font-black tracking-widest">02</span>
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-600" />
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">Key Risks</h4>
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white/60">Key Risks</h4>
             </div>
           </div>
           <ul className="space-y-3 pl-8">
@@ -100,7 +100,7 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
                 className="flex items-start gap-3"
               >
                 <span className="text-red-600 font-black mt-0.5 flex-shrink-0">→</span>
-                <span className="text-sm leading-relaxed text-slate-900 font-semibold">{risk}</span>
+                <span className="text-sm leading-relaxed text-slate-900 dark:text-white/80 font-semibold">{risk}</span>
               </motion.li>
             ))}
           </ul>
@@ -109,14 +109,14 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         {/* 03 Strategic Recommendation */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-slate-700 text-xs font-black tracking-widest">03</span>
+            <span className="text-slate-700 dark:text-white/40 text-xs font-black tracking-widest">03</span>
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-slate-600" />
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">Strategic Recommendation</h4>
+              <Target className="w-4 h-4 text-slate-600 dark:text-white/40" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white/60">Strategic Recommendation</h4>
             </div>
           </div>
-          <div className="border-l-4 border-slate-900 pl-6 py-2 bg-slate-50">
-            <p className="text-sm leading-relaxed text-slate-900 font-semibold">
+          <div className="border-l-4 border-slate-900 dark:border-white pl-6 py-2 bg-slate-50 dark:bg-white/5">
+            <p className="text-sm leading-relaxed text-slate-900 dark:text-white/80 font-semibold">
               {report.strategic_recommendation}
             </p>
           </div>
@@ -125,10 +125,10 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
         {/* 04 Risk Mitigation */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-slate-700 text-xs font-black tracking-widest">04</span>
+            <span className="text-slate-700 dark:text-white/40 text-xs font-black tracking-widest">04</span>
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-slate-600" />
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">Risk Mitigation</h4>
+              <Shield className="w-4 h-4 text-slate-600 dark:text-white/40" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white/60">Risk Mitigation</h4>
             </div>
           </div>
           <ul className="space-y-3 pl-8">
@@ -140,8 +140,8 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
                 transition={{ delay: 0.8 + index * 0.1 }}
                 className="flex items-start gap-3"
               >
-                <span className="text-slate-700 font-black mt-0.5 flex-shrink-0">✓</span>
-                <span className="text-sm leading-relaxed text-slate-900 font-semibold">{item}</span>
+                <span className="text-slate-700 dark:text-white/60 font-black mt-0.5 flex-shrink-0">✓</span>
+                <span className="text-sm leading-relaxed text-slate-900 dark:text-white/80 font-semibold">{item}</span>
               </motion.li>
             ))}
           </ul>
@@ -149,7 +149,7 @@ export function AIReport({ report, generatedAt, loading }: AIReportProps) {
       </div>
 
       {/* Footer */}
-      <div className="mt-8 pt-6 border-t-2 border-swiss-black/10 flex items-center justify-between">
+      <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t-2 border-swiss-black/10 dark:border-white/10 flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs uppercase tracking-wider opacity-30">AI-Generated Analysis</span>
         <span className="text-xs uppercase tracking-wider opacity-30">
           {generatedAt ? new Date(generatedAt).toLocaleString('en-GB') : ''}

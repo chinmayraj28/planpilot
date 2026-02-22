@@ -27,7 +27,7 @@ export function ScoreBar({ score, max = 100, label, showBreakdown, breakdown }: 
         <span className={`text-4xl font-black ${textColor}`}>{score.toFixed(0)}<span className="text-base opacity-40">/100</span></span>
       </div>
 
-      <div className="relative h-6 border-4 border-swiss-black bg-swiss-muted overflow-hidden">
+      <div className="relative h-6 border-4 border-swiss-black dark:border-white/20 bg-swiss-muted overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
@@ -48,35 +48,35 @@ export function ScoreBar({ score, max = 100, label, showBreakdown, breakdown }: 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           transition={{ duration: 0.3 }}
-          className="mt-6 border-2 border-swiss-black divide-y-2 divide-swiss-black text-sm overflow-hidden"
+          className="mt-6 border-2 border-swiss-black dark:border-white/20 divide-y-2 divide-swiss-black dark:divide-white/20 text-sm overflow-hidden"
         >
           <div className="flex items-center gap-4 px-4 py-3">
             <span className="uppercase tracking-wider flex-1">Base Score</span>
-            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${(breakdown.base_score / 80) * 100}%` }} transition={{ duration: 0.6 }} className="h-full bg-swiss-black" />
+            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20 dark:border-white/10">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${(breakdown.base_score / 80) * 100}%` }} transition={{ duration: 0.6 }} className="h-full bg-swiss-black dark:bg-white" />
             </div>
             <span className="font-black text-right w-14">+{breakdown.base_score}</span>
           </div>
-          <div className="flex items-center gap-4 px-4 py-3 bg-red-50">
-            <span className="uppercase tracking-wider flex-1 text-red-700">Constraint Penalty</span>
-            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20">
+          <div className="flex items-center gap-4 px-4 py-3 bg-red-50 dark:bg-red-500/10">
+            <span className="uppercase tracking-wider flex-1 text-red-700 dark:text-red-400">Constraint Penalty</span>
+            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20 dark:border-white/10">
               <motion.div initial={{ width: 0 }} animate={{ width: `${(Math.abs(breakdown.constraint_penalty) / 23) * 100}%` }} transition={{ duration: 0.6 }} className="h-full bg-red-500" />
             </div>
-            <span className="font-black text-red-700 text-right w-14">{breakdown.constraint_penalty}</span>
+            <span className="font-black text-red-700 dark:text-red-400 text-right w-14">{breakdown.constraint_penalty}</span>
           </div>
-          <div className="flex items-center gap-4 px-4 py-3 bg-red-50">
-            <span className="uppercase tracking-wider flex-1 text-red-700">Flood Penalty</span>
-            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20">
+          <div className="flex items-center gap-4 px-4 py-3 bg-red-50 dark:bg-red-500/10">
+            <span className="uppercase tracking-wider flex-1 text-red-700 dark:text-red-400">Flood Penalty</span>
+            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20 dark:border-white/10">
               <motion.div initial={{ width: 0 }} animate={{ width: `${(Math.abs(breakdown.flood_penalty) / 12) * 100}%` }} transition={{ duration: 0.6 }} className="h-full bg-red-500" />
             </div>
-            <span className="font-black text-red-700 text-right w-14">{breakdown.flood_penalty}</span>
+            <span className="font-black text-red-700 dark:text-red-400 text-right w-14">{breakdown.flood_penalty}</span>
           </div>
-          <div className="flex items-center gap-4 px-4 py-3 bg-green-50">
-            <span className="uppercase tracking-wider flex-1 text-green-700">Market Bonus</span>
-            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20">
+          <div className="flex items-center gap-4 px-4 py-3 bg-green-50 dark:bg-green-500/10">
+            <span className="uppercase tracking-wider flex-1 text-green-700 dark:text-green-400">Market Bonus</span>
+            <div className="w-24 h-2 bg-swiss-muted overflow-hidden border border-swiss-black/20 dark:border-white/10">
               <motion.div initial={{ width: 0 }} animate={{ width: `${(breakdown.market_strength_bonus / 20) * 100}%` }} transition={{ duration: 0.6 }} className="h-full bg-green-500" />
             </div>
-            <span className="font-black text-green-700 text-right w-14">+{breakdown.market_strength_bonus}</span>
+            <span className="font-black text-green-700 dark:text-green-400 text-right w-14">+{breakdown.market_strength_bonus}</span>
           </div>
         </motion.div>
       )}

@@ -53,6 +53,53 @@ python scripts/feature_engineering.py
 python scripts/train_model.py
 ```
 
+## Geographic Coverage & Model Scope
+
+### Current Training Coverage
+
+The ML model and planning history database are currently scoped to the **London Borough of Southwark** (LA code: `E09000028`), trained on ~12,301 planning applications over the last 5 years.
+
+**Best results with postcodes:** SE1, SE5, SE11, SE15, SE16, SE17, SE21, SE22, SE24
+
+To expand coverage, ingest additional boroughs via `ingest_ibex.py`:
+
+```bash
+# Example: add Lambeth (E09000022) and Lewisham (E09000023)
+python scripts/ingest_ibex.py \
+    --las E09000022,E09000023 \
+    --postcodes data/postcodes/ONSPD_latest.csv \
+    --years 5
+
+# Then re-run feature engineering and retrain
+python scripts/feature_engineering.py
+python scripts/train_model.py
+```
+
+### What Happens for an Unknown Postcode
+
+The app will not crash — it degrades gracefully:
+
+| Data source | Behaviour outside coverage |
+|---|---|
+| **Geocoding** | Live API (postcodes.io) — works for any valid UK postcode |
+| **Flood / conservation / greenbelt / Article 4** | England-wide shapefiles — accurate anywhere |
+| **EPC rating** | Live API — works UK-wide, returns `N/A` if no data |
+| **Nearby schools** | Live OpenStreetMap query — works anywhere |
+| **Local approval rate** | Returns `0.0` — no history in DB |
+| **Avg decision time** | Returns `0.0` — no history in DB |
+| **Similar applications nearby** | Returns `0` — no history in DB |
+| **Avg price per m²** | Returns `0.0` — no price paid records in DB |
+| **Price trend** | Returns `0.0` — no price paid records in DB |
+| **Comparable sales** | Returns `[]` — no price paid records in DB |
+
+**ML prediction:** The model still runs but receives `0.0` for all local-history features. It falls back to constraint flags + project parameters only, making predictions less reliable outside the training area.
+
+**Viability score:** Will be artificially pessimistic outside coverage because `avg_price_per_m2 = 0` removes the market strength bonus and `local_approval_rate = 0` lowers the base score.
+
+The UI surfaces this via an amber warning in the Planning Metrics panel when no local history is found.
+
+---
+
 ## Endpoints
 
 | Method | Path | Auth | Description |

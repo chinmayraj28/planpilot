@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ChevronDown, Settings2, ToggleLeft, ToggleRight, X } from 'lucide-react'
+import { Search, ChevronDown, Settings2, ToggleLeft, ToggleRight, X, FileUp } from 'lucide-react'
 import type { ProjectParams, ApplicationType, PropertyType, ManualOverrides } from '@/lib/types'
+import { DocumentUpload } from '@/components/DocumentUpload'
 
 interface PostcodeInputProps {
   onAnalyze: (postcode: string, params: ProjectParams, overrides?: ManualOverrides) => void
   loading: boolean
+  token?: string
 }
 
 const APPLICATION_TYPES: { value: ApplicationType; label: string }[] = [
@@ -44,12 +46,13 @@ const OVERRIDE_FIELDS: { key: OverrideKey; label: string; group: 'constraints' |
   { key: 'avg_epc_rating',              label: 'Avg EPC Rating',          group: 'market' },
 ]
 
-export function PostcodeInput({ onAnalyze, loading }: PostcodeInputProps) {
+export function PostcodeInput({ onAnalyze, loading, token }: PostcodeInputProps) {
   const [postcode, setPostcode] = useState('')
   const [applicationType, setApplicationType] = useState<ApplicationType>('extension')
   const [propertyType, setPropertyType] = useState<PropertyType>('semi_detached')
   const [numStoreys, setNumStoreys] = useState(1)
   const [floorArea, setFloorArea] = useState(30)
+  const [showDocUpload, setShowDocUpload] = useState(false)
 
   // Advanced overrides
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -117,17 +120,69 @@ export function PostcodeInput({ onAnalyze, loading }: PostcodeInputProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="border-4 border-swiss-black bg-swiss-white p-8 md:p-12 swiss-grid-pattern"
+      className="border-4 border-swiss-black dark:border-white/15 bg-swiss-white dark:bg-[#111] p-4 sm:p-8 md:p-12 swiss-grid-pattern"
     >
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-6">
+        <h2 className="text-3xl md:text-6xl font-black tracking-tighter mb-4 md:mb-6">
           ANALYZE
           <br />
           POSTCODE
         </h2>
-        <p className="text-lg mb-8 opacity-80">
+        <p className="text-base md:text-lg mb-6 md:mb-8 opacity-80">
           Enter your postcode and project details for a personalised planning assessment
         </p>
+
+        {/* Document Upload (OCR auto-fill) */}
+        {token && (
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setShowDocUpload(!showDocUpload)}
+              className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold opacity-60 hover:opacity-100 transition-opacity mb-3"
+            >
+              <FileUp className="w-4 h-4" />
+              Upload a planning document to auto-fill
+              <motion.div animate={{ rotate: showDocUpload ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+            <AnimatePresence>
+              {showDocUpload && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <DocumentUpload
+                    token={token}
+                    onExtracted={(params, overrides, extractedPostcode) => {
+                      if (extractedPostcode) setPostcode(extractedPostcode)
+                      if (params.application_type) setApplicationType(params.application_type)
+                      if (params.property_type) setPropertyType(params.property_type)
+                      if (params.num_storeys) setNumStoreys(params.num_storeys)
+                      if (params.estimated_floor_area_m2) setFloorArea(params.estimated_floor_area_m2)
+
+                      // Enable + set relevant overrides
+                      const next = new Set(enabledOverrides)
+                      const vals = { ...overrideValues }
+                      for (const [key, val] of Object.entries(overrides)) {
+                        if (val != null) {
+                          next.add(key as OverrideKey)
+                          ;(vals as any)[key] = val
+                        }
+                      }
+                      setEnabledOverrides(next)
+                      setOverrideValues(vals)
+                      if (next.size > 0) setShowAdvanced(true)
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Postcode input */}
@@ -138,17 +193,17 @@ export function PostcodeInput({ onAnalyze, loading }: PostcodeInputProps) {
               value={postcode}
               onChange={(e) => setPostcode(e.target.value.toUpperCase())}
               placeholder="SW1A 1AA"
-              className="w-full border-4 border-swiss-black px-16 py-6 text-2xl font-bold uppercase tracking-wider focus:outline-none focus:border-swiss-accent transition-colors"
+              className="w-full border-4 border-swiss-black dark:border-white/20 bg-transparent dark:text-white px-12 py-4 sm:px-16 sm:py-6 text-xl sm:text-2xl font-bold uppercase tracking-wider focus:outline-none focus:border-swiss-accent transition-colors"
               disabled={loading}
             />
           </div>
 
           {/* Project parameters grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-bold opacity-50">Application Type</label>
               <div className="relative">
-                <select value={applicationType} onChange={(e) => setApplicationType(e.target.value as ApplicationType)} disabled={loading} className="w-full border-4 border-swiss-black px-4 py-3 text-sm font-bold appearance-none bg-white focus:outline-none focus:border-swiss-accent transition-colors cursor-pointer">
+                <select value={applicationType} onChange={(e) => setApplicationType(e.target.value as ApplicationType)} disabled={loading} className="w-full border-4 border-swiss-black dark:border-white/20 px-4 py-3 text-sm font-bold appearance-none bg-white dark:bg-[#0a0a0a] dark:text-white focus:outline-none focus:border-swiss-accent transition-colors cursor-pointer">
                   {APPLICATION_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 pointer-events-none" />
@@ -158,7 +213,7 @@ export function PostcodeInput({ onAnalyze, loading }: PostcodeInputProps) {
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-bold opacity-50">Property Type</label>
               <div className="relative">
-                <select value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType)} disabled={loading} className="w-full border-4 border-swiss-black px-4 py-3 text-sm font-bold appearance-none bg-white focus:outline-none focus:border-swiss-accent transition-colors cursor-pointer">
+                <select value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType)} disabled={loading} className="w-full border-4 border-swiss-black dark:border-white/20 px-4 py-3 text-sm font-bold appearance-none bg-white dark:bg-[#0a0a0a] dark:text-white focus:outline-none focus:border-swiss-accent transition-colors cursor-pointer">
                   {PROPERTY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 pointer-events-none" />
@@ -168,7 +223,7 @@ export function PostcodeInput({ onAnalyze, loading }: PostcodeInputProps) {
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-bold opacity-50">Storeys</label>
               <div className="relative">
-                <select value={numStoreys} onChange={(e) => setNumStoreys(parseInt(e.target.value))} disabled={loading} className="w-full border-4 border-swiss-black px-4 py-3 text-sm font-bold appearance-none bg-white focus:outline-none focus:border-swiss-accent transition-colors cursor-pointer">
+                <select value={numStoreys} onChange={(e) => setNumStoreys(parseInt(e.target.value))} disabled={loading} className="w-full border-4 border-swiss-black dark:border-white/20 px-4 py-3 text-sm font-bold appearance-none bg-white dark:bg-[#0a0a0a] dark:text-white focus:outline-none focus:border-swiss-accent transition-colors cursor-pointer">
                   {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} {n === 1 ? 'Storey' : 'Storeys'}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 pointer-events-none" />
@@ -177,12 +232,12 @@ export function PostcodeInput({ onAnalyze, loading }: PostcodeInputProps) {
 
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-bold opacity-50">Floor Area (m²)</label>
-              <input type="number" value={floorArea} onChange={(e) => setFloorArea(Math.max(1, parseInt(e.target.value) || 1))} min={1} max={10000} disabled={loading} className="w-full border-4 border-swiss-black px-4 py-3 text-sm font-bold focus:outline-none focus:border-swiss-accent transition-colors" />
+              <input type="number" value={floorArea} onChange={(e) => setFloorArea(Math.max(1, parseInt(e.target.value) || 1))} min={1} max={10000} disabled={loading} className="w-full border-4 border-swiss-black dark:border-white/20 bg-transparent dark:text-white px-4 py-3 text-sm font-bold focus:outline-none focus:border-swiss-accent transition-colors" />
             </div>
           </div>
 
           {/* ── Advanced: Manual Overrides ── */}
-          <div className="border-t-2 border-black/10 pt-4">
+          <div className="border-t-2 border-black/10 dark:border-white/10 pt-4">
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
@@ -256,7 +311,7 @@ function OverrideGroup({ title, fields, enabled, values, onToggle, onChange, dis
         {fields.map((field) => {
           const isOn = enabled.has(field.key)
           return (
-            <div key={field.key} className={`flex items-center gap-3 px-4 py-3 border-2 transition-colors ${isOn ? 'border-swiss-accent bg-swiss-accent/5' : 'border-black/10 bg-white'}`}>
+            <div key={field.key} className={`flex items-center gap-3 px-4 py-3 border-2 transition-colors ${isOn ? 'border-swiss-accent bg-swiss-accent/5' : 'border-black/10 dark:border-white/10 bg-white dark:bg-white/5'}`}>
               <button type="button" onClick={() => onToggle(field.key)} disabled={disabled} className="flex-shrink-0" aria-label={`Toggle ${field.label}`}>
                 {isOn ? <ToggleRight className="w-6 h-6 text-swiss-accent" /> : <ToggleLeft className="w-6 h-6 opacity-30" />}
               </button>
@@ -281,11 +336,11 @@ function OverrideGroup({ title, fields, enabled, values, onToggle, onChange, dis
 function OverrideInput({ field, value, onChange, disabled }: {
   field: typeof OVERRIDE_FIELDS[number]; value: any; onChange: (raw: string) => void; disabled: boolean
 }) {
-  const base = "border-2 border-swiss-black px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-swiss-accent transition-colors"
+  const base = "border-2 border-swiss-black dark:border-white/20 px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-swiss-accent transition-colors dark:text-white"
 
   if (field.key === 'in_conservation_area' || field.key === 'in_greenbelt' || field.key === 'in_article4_zone') {
     return (
-      <select value={value === true ? 'true' : value === false ? 'false' : ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={`${base} w-20 appearance-none bg-white cursor-pointer`}>
+      <select value={value === true ? 'true' : value === false ? 'false' : ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={`${base} w-20 appearance-none bg-white dark:bg-[#111] cursor-pointer`}>
         <option value="">—</option>
         <option value="true">Yes</option>
         <option value="false">No</option>
@@ -295,7 +350,7 @@ function OverrideInput({ field, value, onChange, disabled }: {
 
   if (field.key === 'flood_zone') {
     return (
-      <select value={value ?? ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={`${base} w-20 appearance-none bg-white cursor-pointer`}>
+      <select value={value ?? ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={`${base} w-20 appearance-none bg-white dark:bg-[#111] cursor-pointer`}>
         <option value="">—</option>
         <option value="1">1</option>
         <option value="2">2</option>
@@ -306,7 +361,7 @@ function OverrideInput({ field, value, onChange, disabled }: {
 
   if (field.key === 'avg_epc_rating') {
     return (
-      <select value={value ?? ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={`${base} w-20 appearance-none bg-white cursor-pointer`}>
+      <select value={value ?? ''} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={`${base} w-20 appearance-none bg-white dark:bg-[#111] cursor-pointer`}>
         <option value="">—</option>
         {['A','B','C','D','E','F','G'].map(r => <option key={r} value={r}>{r}</option>)}
       </select>
@@ -322,6 +377,6 @@ function OverrideInput({ field, value, onChange, disabled }: {
   }
 
   return (
-    <input type="number" step="any" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholders[field.key] || ''} disabled={disabled} className={`${base} w-24`} />
+    <input type="number" step="any" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholders[field.key] || ''} disabled={disabled} className={`${base} w-24 bg-transparent`} />
   )
 }

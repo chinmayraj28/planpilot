@@ -68,6 +68,11 @@ export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
   const [activePipelineStep, setActivePipelineStep] = useState(0)
 
+  // Landing page is always light mode
+  useEffect(() => {
+    document.documentElement.classList.remove('dark')
+  }, [])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -105,7 +110,7 @@ export default function LandingPage() {
     <main className="min-h-screen bg-swiss-white">
       {/* ══════════ Header ══════════ */}
       <header className="border-b-4 border-swiss-black bg-swiss-white sticky top-0 z-50">
-        <div className="container mx-auto px-8 py-5 flex justify-between items-center">
+        <div className="container mx-auto px-4 sm:px-8 py-4 sm:py-5 flex justify-between items-center">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-swiss-accent" />
@@ -114,14 +119,23 @@ export default function LandingPage() {
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
             {user ? (
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium hidden md:block">{user.email}</span>
-                <Link href="/dashboard" className="swiss-btn-primary inline-flex items-center gap-2">
-                  Go to Dashboard <ArrowRight className="w-4 h-4" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden md:flex items-center gap-2.5 border-2 border-black/10 px-3 py-1.5 mr-1">
+                  <div className="w-6 h-6 bg-swiss-accent/10 border border-swiss-accent/30 flex items-center justify-center">
+                    <span className="text-xs font-black text-swiss-accent">{user.email?.[0]?.toUpperCase()}</span>
+                  </div>
+                  <span className="text-xs font-bold tracking-wide text-black/50 max-w-[160px] truncate">{user.email}</span>
+                </div>
+                <Link href="/dashboard" className="inline-flex items-center gap-2 bg-swiss-black text-white px-4 py-2.5 sm:px-5 text-xs font-black uppercase tracking-widest hover:bg-swiss-accent transition-colors">
+                  Dashboard
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             ) : (
-              <Link href="/login" className="swiss-btn-secondary inline-block">Sign In</Link>
+              <Link href="/login" className="inline-flex items-center gap-2 border-2 border-swiss-black px-4 py-2.5 sm:px-5 text-xs font-black uppercase tracking-widest hover:bg-swiss-black hover:text-white transition-colors">
+                Sign In
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             )}
           </motion.div>
         </div>
@@ -129,51 +143,53 @@ export default function LandingPage() {
 
       {/* ══════════ Hero ══════════ */}
       <section className="border-b-4 border-swiss-black relative overflow-hidden">
-        <div className="container mx-auto px-8 py-20 md:py-28 grid md:grid-cols-12 gap-12 items-center">
+        <div className="container mx-auto px-4 sm:px-8 py-10 md:py-28 grid md:grid-cols-12 gap-8 md:gap-12 items-center">
           {/* Left: Copy */}
           <div className="md:col-span-6 relative z-10">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <p className="text-xs md:text-sm tracking-widest uppercase font-bold mb-5 text-swiss-accent">
                 UK Planning Intelligence Platform
               </p>
-              <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-8">
+              <h2 className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-6 md:mb-8">
                 KNOW BEFORE
                 <br />
                 YOU
                 <br />
                 <span className="text-swiss-accent">APPLY</span>
               </h2>
-              <p className="text-lg md:text-xl max-w-xl mb-10 leading-relaxed opacity-80">
+              <p className="text-sm sm:text-base md:text-xl max-w-xl mb-6 md:mb-10 leading-relaxed opacity-80">
                 Enter any UK postcode. Get constraint data, flood risk, approval probability,
                 viability scoring, and AI-generated strategic advice — personalised to your
                 specific project — in seconds.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href={user ? '/dashboard' : '/login'} className="swiss-btn-primary inline-flex items-center gap-2 group">
+              <div className="flex flex-wrap gap-3 sm:gap-4">
+                <Link href={user ? '/dashboard' : '/login'} className="swiss-btn-primary inline-flex items-center gap-2 group !px-5 !py-3 sm:!px-8 sm:!py-4">
                   {user ? 'Go to Dashboard' : 'Get Started Free'}
                   <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </motion.div>
                 </Link>
-                <a href="#how-it-works" className="swiss-btn-secondary inline-flex items-center gap-2">
-                  See How It Works <ChevronRight className="w-4 h-4" />
+                <a href="#how-it-works" className="swiss-btn-secondary inline-flex items-center gap-2 !px-5 !py-3 sm:!px-8 sm:!py-4">
+                  <span className="hidden xs:inline">See How It Works</span>
+                  <span className="xs:hidden">How It Works</span>
+                  <ChevronRight className="w-4 h-4" />
                 </a>
               </div>
             </motion.div>
           </div>
 
           {/* Right: Animated pipeline preview */}
-          <div className="md:col-span-6 relative">
+          <div className="md:col-span-6 relative overflow-hidden md:overflow-visible">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
               className="relative"
             >
               {/* Mock UI card */}
-              <div className="border-4 border-swiss-black bg-white p-6 md:p-8 relative">
+              <div className="border-4 border-swiss-black bg-white p-4 md:p-8 relative">
                 {/* Fake postcode bar */}
-                <div className="flex items-center gap-3 border-4 border-swiss-black px-5 py-4 mb-6">
+                <div className="flex items-center gap-2 sm:gap-3 border-4 border-swiss-black px-3 sm:px-5 py-3 sm:py-4 mb-4 sm:mb-6">
                   <Search className="w-5 h-5 opacity-40" />
                   <motion.div
                     key={activePipelineStep}
@@ -205,7 +221,7 @@ export default function LandingPage() {
                           borderColor: isActive ? '#FF3000' : isDone ? '#000' : 'rgba(0,0,0,0.1)',
                         }}
                         transition={{ duration: 0.4 }}
-                        className="flex items-center gap-4 px-4 py-3 border-l-4 cursor-pointer"
+                        className="flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 border-l-4 cursor-pointer"
                         onClick={() => setActivePipelineStep(i)}
                       >
                         <div className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-swiss-accent text-white' : isDone ? 'bg-black text-white' : 'bg-black/5'}`}>
@@ -244,7 +260,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.3 }}
                     className="mt-4 overflow-hidden"
                   >
-                    <div className="bg-black text-white p-4 text-xs leading-relaxed font-mono">
+                    <div className="bg-black text-white p-3 sm:p-4 text-xs leading-relaxed font-mono break-words overflow-hidden">
                       <span className="text-swiss-accent font-bold">{'>'} </span>
                       {PIPELINE[activePipelineStep].detail}
                     </div>
@@ -252,14 +268,14 @@ export default function LandingPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Decorative elements */}
+              {/* Decorative elements — hidden on mobile to prevent overflow */}
               <motion.div
-                className="absolute -top-4 -right-4 w-16 h-16 bg-swiss-accent"
+                className="hidden sm:block absolute -top-4 -right-4 w-16 h-16 bg-swiss-accent"
                 animate={{ rotate: [0, 90, 90, 0] }}
                 transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
               />
               <motion.div
-                className="absolute -bottom-3 -left-3 w-10 h-10 border-4 border-swiss-black"
+                className="hidden sm:block absolute -bottom-3 -left-3 w-10 h-10 border-4 border-swiss-black"
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               />
@@ -270,19 +286,19 @@ export default function LandingPage() {
 
       {/* ══════════ Stats strip ══════════ */}
       <section className="border-b-4 border-swiss-black bg-swiss-black text-white">
-        <div className="container mx-auto px-8 py-10">
-          <div className="grid grid-cols-3 gap-8 text-center">
+        <div className="container mx-auto px-4 sm:px-8 py-6 md:py-10">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <p className="text-4xl md:text-5xl font-black">{postcodeCount.toLocaleString()}+</p>
-              <p className="text-xs uppercase tracking-widest opacity-50 mt-2">Planning Applications Trained</p>
+              <p className="text-2xl sm:text-4xl md:text-5xl font-black">{postcodeCount.toLocaleString()}+</p>
+              <p className="text-[10px] sm:text-xs uppercase tracking-widest opacity-50 mt-1 sm:mt-2">Planning Applications Trained</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}>
-              <p className="text-4xl md:text-5xl font-black">{featureCount}</p>
-              <p className="text-xs uppercase tracking-widest opacity-50 mt-2">ML Features Per Prediction</p>
+              <p className="text-2xl sm:text-4xl md:text-5xl font-black">{featureCount}</p>
+              <p className="text-[10px] sm:text-xs uppercase tracking-widest opacity-50 mt-1 sm:mt-2">ML Features Per Prediction</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
-              <p className="text-4xl md:text-5xl font-black">{dataSourceCount}</p>
-              <p className="text-xs uppercase tracking-widest opacity-50 mt-2">Government Data Sources</p>
+              <p className="text-2xl sm:text-4xl md:text-5xl font-black">{dataSourceCount}</p>
+              <p className="text-[10px] sm:text-xs uppercase tracking-widest opacity-50 mt-1 sm:mt-2">Government Data Sources</p>
             </motion.div>
           </div>
         </div>
@@ -290,17 +306,17 @@ export default function LandingPage() {
 
       {/* ══════════ How It Works — full pipeline ══════════ */}
       <section id="how-it-works" className="border-b-4 border-swiss-black scroll-mt-20">
-        <div className="container mx-auto px-8 py-24">
+        <div className="container mx-auto px-4 sm:px-8 py-12 md:py-24">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
             <p className="text-xs md:text-sm tracking-widest uppercase font-bold mb-5 text-swiss-accent">
               How It Works
             </p>
-            <h3 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
+            <h3 className="text-4xl md:text-7xl font-black tracking-tighter mb-4 md:mb-6">
               THE FULL
               <br />
               PIPELINE
             </h3>
-            <p className="text-lg opacity-70 max-w-2xl mb-16">
+            <p className="text-base md:text-lg opacity-70 max-w-2xl mb-8 md:mb-16">
               From postcode to actionable intelligence in under 5 seconds. Every step is transparent
               — and every data point can be manually overridden if you have better local knowledge.
             </p>
@@ -321,24 +337,24 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: '-50px' }}
                     transition={{ duration: 0.5, delay: i * 0.1 }}
-                    className="grid md:grid-cols-12 gap-6 md:gap-8 group"
+                    className="grid md:grid-cols-12 gap-4 md:gap-8 group"
                   >
                     {/* Step number + icon */}
                     <div className="md:col-span-1 flex md:flex-col items-center gap-3">
                       <motion.div
                         whileHover={{ scale: 1.1 }}
-                        className={`w-20 h-20 ${step.color} text-white flex items-center justify-center relative z-10 flex-shrink-0`}
+                        className={`w-14 h-14 md:w-20 md:h-20 ${step.color} text-white flex items-center justify-center relative z-10 flex-shrink-0`}
                       >
-                        <Icon className="w-8 h-8" />
+                        <Icon className="w-6 h-6 md:w-8 md:h-8" />
                       </motion.div>
                     </div>
 
                     {/* Content */}
-                    <div className="md:col-span-11 border-4 border-swiss-black p-8 bg-white group-hover:bg-swiss-accent group-hover:text-white transition-all duration-200 mb-6">
+                    <div className="md:col-span-11 border-4 border-swiss-black p-4 md:p-8 bg-white group-hover:bg-swiss-accent group-hover:text-white transition-all duration-200 mb-4 md:mb-6">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-xs font-black tracking-widest opacity-40 mb-2">STEP {String(i + 1).padStart(2, '0')}</p>
-                          <h4 className="text-2xl md:text-3xl font-black tracking-tighter mb-3">{step.title}</h4>
+                          <h4 className="text-xl md:text-3xl font-black tracking-tighter mb-2 md:mb-3">{step.title}</h4>
                           <p className="text-sm md:text-base leading-relaxed opacity-80">{step.desc}</p>
                         </div>
                       </div>
@@ -356,16 +372,16 @@ export default function LandingPage() {
 
       {/* ══════════ Personalisation callout ══════════ */}
       <section className="border-b-4 border-swiss-black bg-swiss-accent text-white overflow-hidden relative">
-        <div className="container mx-auto px-8 py-20 relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="container mx-auto px-4 sm:px-8 py-10 md:py-20 relative z-10">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <p className="text-xs tracking-widest uppercase font-bold opacity-60 mb-4">New Feature</p>
-              <h3 className="text-4xl md:text-6xl font-black tracking-tighter mb-6">
+              <h3 className="text-3xl md:text-6xl font-black tracking-tighter mb-4 md:mb-6">
                 YOUR PROJECT.
                 <br />
                 YOUR DATA.
               </h3>
-              <p className="text-lg leading-relaxed opacity-90 mb-8">
+              <p className="text-sm sm:text-base md:text-lg leading-relaxed opacity-90 mb-6 md:mb-8">
                 PlanPilot doesn't just do generic location lookups. Tell us your application type,
                 property type, floor area — and optionally override <em>any</em> of the 10 model
                 features with your own values. The prediction adapts to your exact scenario.
@@ -434,12 +450,12 @@ export default function LandingPage() {
 
       {/* ══════════ Features Grid ══════════ */}
       <section className="border-b-4 border-swiss-black bg-swiss-muted swiss-diagonal">
-        <div className="container mx-auto px-8 py-24">
+        <div className="container mx-auto px-4 sm:px-8 py-12 md:py-24">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
             <p className="text-xs md:text-sm tracking-widest uppercase font-bold mb-5 text-swiss-accent">
               Core Capabilities
             </p>
-            <h3 className="text-5xl md:text-7xl font-black tracking-tighter mb-16">
+            <h3 className="text-4xl md:text-7xl font-black tracking-tighter mb-8 md:mb-16">
               COMPREHENSIVE
               <br />
               INTELLIGENCE
@@ -467,13 +483,13 @@ export default function LandingPage() {
 
       {/* ══════════ Data Sources ══════════ */}
       <section className="border-b-4 border-swiss-black">
-        <div className="container mx-auto px-8 py-24">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+        <div className="container mx-auto px-4 sm:px-8 py-12 md:py-24">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <p className="text-xs md:text-sm tracking-widest uppercase font-bold mb-5 text-swiss-accent">
                 Data Sources
               </p>
-              <h3 className="text-5xl md:text-6xl font-black tracking-tighter mb-6">
+              <h3 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 md:mb-6">
                 BUILT ON
                 <br />
                 REAL DATA
@@ -500,7 +516,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.06 }}
-                  className="flex items-start gap-4 border-4 border-black p-5 bg-white hover:bg-black hover:text-white transition-all duration-200 group"
+                  className="flex items-start gap-3 sm:gap-4 border-4 border-black p-3 sm:p-5 bg-white hover:bg-black hover:text-white transition-all duration-200 group"
                 >
                   <div className="w-6 h-6 bg-swiss-accent flex-shrink-0 mt-0.5 group-hover:bg-white transition-colors" />
                   <div>
@@ -516,17 +532,17 @@ export default function LandingPage() {
 
       {/* ══════════ CTA ══════════ */}
       <section className="bg-swiss-black text-swiss-white">
-        <div className="container mx-auto px-8 py-24 text-center">
+        <div className="container mx-auto px-4 sm:px-8 py-12 md:py-24 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
-            <h3 className="text-5xl md:text-7xl font-black tracking-tighter mb-8">
+            <h3 className="text-4xl md:text-7xl font-black tracking-tighter mb-6 md:mb-8">
               READY TO START?
             </h3>
-            <p className="text-xl mb-12 max-w-2xl mx-auto opacity-90">
+            <p className="text-base md:text-xl mb-8 md:mb-12 max-w-2xl mx-auto opacity-90">
               Sign in to access the full PlanPilot AI platform and start analyzing properties with confidence.
             </p>
             <Link
               href={user ? '/dashboard' : '/login'}
-              className="inline-block border-4 border-swiss-white bg-swiss-white text-swiss-black uppercase font-bold tracking-widest transition-all duration-150 ease-linear px-12 py-6 text-sm hover:bg-swiss-accent hover:border-swiss-accent hover:text-swiss-white"
+              className="inline-block border-4 border-swiss-white bg-swiss-white text-swiss-black uppercase font-bold tracking-widest transition-all duration-150 ease-linear px-6 py-4 sm:px-12 sm:py-6 text-sm hover:bg-swiss-accent hover:border-swiss-accent hover:text-swiss-white"
             >
               {user ? 'Go to Dashboard' : 'Access Platform'}
             </Link>
@@ -536,7 +552,7 @@ export default function LandingPage() {
 
       {/* ══════════ Footer ══════════ */}
       <footer className="border-t-4 border-swiss-black bg-swiss-muted">
-        <div className="container mx-auto px-8 py-12">
+        <div className="container mx-auto px-4 sm:px-8 py-8 md:py-12">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <h4 className="text-lg font-black tracking-tighter mb-4">PLANPILOT AI</h4>

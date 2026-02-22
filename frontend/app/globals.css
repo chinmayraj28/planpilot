@@ -13,6 +13,11 @@
     @apply font-sans bg-swiss-white text-swiss-black antialiased;
   }
 
+  .dark body,
+  :is(.dark) body {
+    @apply bg-[#0a0a0a] text-white;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply uppercase font-black tracking-tighter;
   }
@@ -90,13 +95,25 @@
     @apply swiss-btn bg-swiss-black text-swiss-white hover:bg-swiss-accent hover:border-swiss-accent;
   }
 
+  :is(.dark) .swiss-btn-primary {
+    @apply bg-white text-black border-white hover:bg-swiss-accent hover:border-swiss-accent hover:text-white;
+  }
+
   .swiss-btn-secondary {
     @apply swiss-btn bg-swiss-white text-swiss-black hover:bg-swiss-black hover:text-swiss-white;
   }
 
+  :is(.dark) .swiss-btn-secondary {
+    @apply bg-[#111] text-white border-white/20 hover:bg-white hover:text-black;
+  }
+
   /* Swiss Card */
   .swiss-card {
-    @apply border-4 border-swiss-black bg-swiss-white p-8 transition-all duration-200 ease-out;
+    @apply border-4 border-swiss-black bg-swiss-white p-4 sm:p-8 transition-all duration-200 ease-out;
+  }
+
+  :is(.dark) .swiss-card {
+    @apply border-white/15 bg-[#111] text-white;
   }
 
   .swiss-card-hover {
@@ -110,7 +127,11 @@
 
   /* Dark card */
   .swiss-card-dark {
-    @apply border-4 border-swiss-black bg-swiss-black text-swiss-white p-8 transition-all duration-200;
+    @apply border-4 border-swiss-black bg-swiss-black text-swiss-white p-4 sm:p-8 transition-all duration-200;
+  }
+
+  :is(.dark) .swiss-card-dark {
+    @apply border-white/15 bg-[#1a1a1a];
   }
 
   /* Constraint status rows */
@@ -126,6 +147,14 @@
   .constraint-row-danger {
     @apply constraint-row border-red-500 bg-red-50;
   }
+
+  :is(.dark) .constraint-row-safe { @apply bg-green-500/10; }
+  :is(.dark) .constraint-row-warn { @apply bg-amber-500/10; }
+  :is(.dark) .constraint-row-danger { @apply bg-red-500/10; }
+
+  /* Global dark-mode override for swiss-muted (near-white #F2F2F2) */
+  :is(.dark) .bg-swiss-muted { background-color: rgba(255,255,255,0.08) !important; }
+  :is(.dark) .border-swiss-muted { border-color: rgba(255,255,255,0.15) !important; }
 
   /* Verdict badge */
   .verdict-strong { @apply bg-green-600 text-white px-3 py-1 text-xs font-black uppercase tracking-widest; }

@@ -26,7 +26,7 @@ export function ViabilityScore({ score, breakdown }: ViabilityScoreProps) {
       transition={{ duration: 0.4, delay: 0.1 }}
       className="swiss-card"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4 sm:mb-8">
         <h3 className="text-lg font-black uppercase tracking-tight">
           Viability Score
         </h3>

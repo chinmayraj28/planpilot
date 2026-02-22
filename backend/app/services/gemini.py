@@ -3,7 +3,7 @@ from app.config import settings
 from app.schemas.models import AnalyzeResponse
 
 genai.configure(api_key=settings.gemini_api_key)
-_model = genai.GenerativeModel("gemini-2.0-flash")
+_model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 def _build_prompt(data: AnalyzeResponse) -> str:

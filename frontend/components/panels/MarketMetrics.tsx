@@ -44,7 +44,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
       transition={{ duration: 0.4, delay: 0.4 }}
       className="swiss-card swiss-diagonal"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4 sm:mb-8">
         <h3 className="text-lg font-black uppercase tracking-tight">Market Metrics</h3>
         <InfoTooltip text="Local property market data including prices, trends, and energy efficiency ratings." />
       </div>
@@ -52,7 +52,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
       <div className="space-y-6">
         {/* Price per m² */}
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0">
             <PoundSterling className="w-6 h-6" />
           </div>
           <div className="flex-1">
@@ -61,7 +61,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
               <InfoTooltip text="Average residential sale price per square metre from Land Registry data within this postcode area." />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black">£{metrics.avg_price_per_m2.toLocaleString('en-GB')}</span>
+              <span className="text-2xl sm:text-4xl font-black">£{metrics.avg_price_per_m2.toLocaleString('en-GB')}</span>
               <span className="text-sm opacity-60">/m²</span>
             </div>
           </div>
@@ -69,7 +69,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
 
         {/* Price Trend */}
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0">
             {isPositive
               ? <TrendingUp className="w-6 h-6 text-green-600" />
               : <TrendingDown className="w-6 h-6 text-red-600" />}
@@ -80,7 +80,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
               <InfoTooltip text="Percentage change in average sale prices over the past 24 months." />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className={`text-4xl font-black ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              <span className={`text-2xl sm:text-4xl font-black ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                 {isPositive ? '+' : ''}{trendPct.toFixed(1)}%
               </span>
               <span className="text-sm opacity-60">{isPositive ? 'growth' : 'decline'}</span>
@@ -96,7 +96,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
 
         {/* EPC Rating */}
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0">
             <Zap className="w-6 h-6" />
           </div>
           <div className="flex-1">
@@ -112,14 +112,14 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
             ) : (
               <div>
                 <div className="flex items-center gap-4 mb-2">
-                  <span className="text-4xl font-black">{metrics.avg_epc_rating}</span>
+                  <span className="text-2xl sm:text-4xl font-black">{metrics.avg_epc_rating}</span>
                   <span className="text-sm opacity-60">{epc?.label}</span>
                 </div>
                 <div className="flex gap-1 h-3">
                   {['A','B','C','D','E','F','G'].map(r => (
                     <div
                       key={r}
-                      className={`flex-1 border border-swiss-black/20 ${epcConfig[r]?.bar} ${r === metrics.avg_epc_rating ? 'opacity-100 ring-2 ring-swiss-black' : 'opacity-30'}`}
+                      className={`flex-1 border border-swiss-black/20 dark:border-white/10 ${epcConfig[r]?.bar} ${r === metrics.avg_epc_rating ? 'opacity-100 ring-2 ring-swiss-black dark:ring-white' : 'opacity-30'}`}
                     />
                   ))}
                 </div>
@@ -133,7 +133,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
         {/* Comparable Sales */}
         {metrics.comparable_sales && metrics.comparable_sales.length > 0 && (
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0">
               <Home className="w-6 h-6" />
             </div>
             <div className="flex-1">
@@ -143,7 +143,7 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
               </div>
               <div className="space-y-2">
                 {metrics.comparable_sales.map((sale, i) => (
-                  <div key={i} className="flex items-center justify-between border border-swiss-black/20 px-3 py-2">
+                  <div key={i} className="flex items-center justify-between border border-swiss-black/20 dark:border-white/10 px-3 py-2">
                     <div>
                       <span className="text-sm font-bold">{sale.postcode}</span>
                       <span className="text-xs opacity-40 ml-2">{new Date(sale.sale_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>

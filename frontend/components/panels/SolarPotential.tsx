@@ -76,7 +76,7 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
       transition={{ duration: 0.4, delay: 0.25 }}
       className="swiss-card swiss-diagonal"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4 sm:mb-8">
         <h3 className="text-lg font-black uppercase tracking-tight">Solar Potential</h3>
         <InfoTooltip text={`Estimates for a ${SYSTEM_KWP}kWp south-facing PV system. ${source === 'pvgis' ? 'Data from EU PVGIS.' : 'EU PVGIS unavailable — UK latitude estimate used.'}`} />
       </div>
@@ -84,14 +84,14 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
       {loading ? (
         <div className="space-y-3 animate-pulse">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-14 bg-swiss-muted border-2 border-swiss-black/10" />
+            <div key={i} className="h-14 bg-swiss-muted border-2 border-swiss-black/10 dark:border-white/5" />
           ))}
         </div>
       ) : (
         <div className="space-y-5">
           {/* Annual Generation */}
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0 bg-amber-50">
+            <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0 bg-amber-50 dark:bg-amber-900/30">
               <Sun className="w-6 h-6 text-amber-500" />
             </div>
             <div className="flex-1">
@@ -100,7 +100,7 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
                 <InfoTooltip text={`Estimated annual output for a ${SYSTEM_KWP}kWp system at this location.`} />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black">{Math.round(annualKwh ?? 0).toLocaleString('en-GB')}</span>
+                <span className="text-2xl sm:text-4xl font-black">{Math.round(annualKwh ?? 0).toLocaleString('en-GB')}</span>
                 <span className="text-sm opacity-60">kWh/year</span>
               </div>
               {source === 'estimate' && (
@@ -111,7 +111,7 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
 
           {/* Bill Savings */}
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0">
               <Zap className="w-6 h-6 text-green-600" />
             </div>
             <div className="flex-1">
@@ -120,7 +120,7 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
                 <InfoTooltip text={`Self-consumed electricity (${(1 - EXPORT_FRACTION) * 100}%) valued at ${(UNIT_RATE_GBP * 100).toFixed(1)}p/kWh (Ofgem avg).`} />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-green-600">£{Math.round(billSaving).toLocaleString('en-GB')}</span>
+                <span className="text-2xl sm:text-4xl font-black text-green-600">£{Math.round(billSaving).toLocaleString('en-GB')}</span>
                 <span className="text-sm opacity-60">/year</span>
               </div>
             </div>
@@ -128,7 +128,7 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
 
           {/* Export Income */}
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 border-4 border-swiss-black dark:border-white/20 flex items-center justify-center flex-shrink-0">
               <PoundSterling className="w-6 h-6 text-blue-600" />
             </div>
             <div className="flex-1">
@@ -137,27 +137,27 @@ export function SolarPotential({ lat, lon }: SolarPotentialProps) {
                 <InfoTooltip text={`Exported electricity (${EXPORT_FRACTION * 100}%) sold via Smart Export Guarantee at ${(SEG_RATE_GBP * 100).toFixed(1)}p/kWh.`} />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-blue-600">£{Math.round(segIncome).toLocaleString('en-GB')}</span>
+                <span className="text-2xl sm:text-4xl font-black text-blue-600">£{Math.round(segIncome).toLocaleString('en-GB')}</span>
                 <span className="text-sm opacity-60">/year</span>
               </div>
             </div>
           </div>
 
           {/* Payback */}
-          <div className="border-t-4 border-swiss-black pt-5">
+          <div className="border-t-4 border-swiss-black dark:border-white/20 pt-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Clock className="w-6 h-6 opacity-60" />
                 <div>
                   <p className="text-xs uppercase tracking-widest font-bold opacity-60">Simple Payback</p>
-                  <p className="text-3xl font-black">
+                  <p className="text-2xl sm:text-3xl font-black">
                     {paybackYears !== null ? `${paybackYears.toFixed(1)} yrs` : 'N/A'}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-widest font-bold opacity-60">Total Annual Benefit</p>
-                <p className="text-3xl font-black text-green-600">£{Math.round(totalAnnual).toLocaleString('en-GB')}</p>
+                <p className="text-2xl sm:text-3xl font-black text-green-600">£{Math.round(totalAnnual).toLocaleString('en-GB')}</p>
               </div>
             </div>
             <p className="text-xs opacity-30 mt-3 leading-relaxed">
