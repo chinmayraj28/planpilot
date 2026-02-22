@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Gemini_2.0-Flash-4285F4?style=for-the-badge&logo=google" alt="Gemini 2.0 Flash" />
 </p>
 
-<h1 align="center">🏗️ PlanPilot AI</h1>
+<h1 align="center">PlanPilot AI</h1>
 <h3 align="center">UK Planning Intelligence Platform</h3>
 
 <p align="center">
@@ -15,11 +15,11 @@
 
 ---
 
-## 🎯 The Problem
+## The Problem
 
 Getting planning permission in the UK is a **black box**. Homeowners, developers, and architects spend thousands of pounds on applications with no idea whether they'll be approved. Local approval rates, flood risk, conservation zones, and market conditions all play a role — but this data is scattered across dozens of government sources and nearly impossible to interpret together.
 
-## 💡 The Solution
+## The Solution
 
 **PlanPilot AI** brings all of it together in one click. Enter a UK postcode and your project details, and get:
 
@@ -38,7 +38,7 @@ Getting planning permission in the UK is a **black box**. Homeowners, developers
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -67,7 +67,7 @@ Getting planning permission in the UK is a **black box**. Homeowners, developers
 
 ---
 
-## 📊 Data Sources
+## Data Sources
 
 We ingest and cross-reference **7 UK government and open datasets**:
 
@@ -83,7 +83,7 @@ We ingest and cross-reference **7 UK government and open datasets**:
 
 ---
 
-## 🤖 ML Model
+## ML Model
 
 The approval prediction engine uses an **XGBoost gradient-boosted classifier** trained on real planning decision data.
 
@@ -114,7 +114,7 @@ After the base ML prediction, heuristic adjustments are applied based on the use
 
 ---
 
-## 🖥️ Screenshots
+## Screenshots
 
 ### Landing Page
 > Animated pipeline demo showing the 5-step analysis process, data sources section, and feature cards with Framer Motion animations.
@@ -127,7 +127,7 @@ After the base ML prediction, heuristic adjustments are applied based on the use
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -202,11 +202,11 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 npm run dev
 ```
 
-Visit **http://localhost:3000** 🎉
+Visit **http://localhost:3000**
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 hacklondon-26/
@@ -247,7 +247,7 @@ hacklondon-26/
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -262,7 +262,7 @@ hacklondon-26/
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -276,12 +276,12 @@ The `/analyze` endpoint supports optional query parameters:
 
 ---
 
-## 👥 Team
+## Team
 
-Built at **HackLondon 2026** 🇬🇧
+Built at **HackLondon 2026**
 
 ---
 
-## 📄 License
+## License
 
 MIT
