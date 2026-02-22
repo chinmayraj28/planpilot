@@ -11,12 +11,38 @@ def _build_prompt(data: AnalyzeResponse) -> str:
     p = data.planning_metrics
     m = data.market_metrics
     ml = data.ml_prediction
+    proj = data.project_params
+
+    app_type_labels = {
+        "extension": "Extension",
+        "new_build": "New Build",
+        "loft_conversion": "Loft Conversion",
+        "change_of_use": "Change of Use",
+        "listed_building": "Listed Building Works",
+        "demolition": "Demolition",
+        "other": "Other",
+    }
+    prop_type_labels = {
+        "detached": "Detached",
+        "semi_detached": "Semi-Detached",
+        "terraced": "Terraced",
+        "flat": "Flat/Apartment",
+        "commercial": "Commercial",
+        "land": "Land Only",
+    }
 
     return f"""
 You are a professional UK planning consultant. Using ONLY the data provided below,
 write a structured planning intelligence report. Do not speculate beyond the data.
+Tailor your advice specifically to the proposed project described below.
 
 LOCATION: {data.postcode} ({data.location.district}, {data.location.ward})
+
+PROPOSED PROJECT:
+- Application Type: {app_type_labels.get(proj.application_type.value, proj.application_type.value)}
+- Property Type: {prop_type_labels.get(proj.property_type.value, proj.property_type.value)}
+- Number of Storeys: {proj.num_storeys}
+- Estimated Floor Area: {proj.estimated_floor_area_m2} m²
 
 CONSTRAINTS:
 - Flood Zone: {c.flood_zone} (1=low, 2=medium, 3=high risk)
@@ -40,9 +66,9 @@ ML PREDICTION:
 
 Respond in this exact JSON format with no additional text:
 {{
-  "overall_outlook": "<2-3 sentence summary of development prospects>",
+  "overall_outlook": "<2-3 sentence summary of development prospects, specifically for the proposed {app_type_labels.get(proj.application_type.value, 'project')}>",
   "key_risks": ["<risk 1>", "<risk 2>", "<risk 3>"],
-  "strategic_recommendation": "<1-2 sentence actionable recommendation>",
+  "strategic_recommendation": "<1-2 sentence actionable recommendation tailored to the specific project type and scale>",
   "risk_mitigation": ["<mitigation 1>", "<mitigation 2>", "<mitigation 3>"]
 }}
 """.strip()

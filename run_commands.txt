@@ -1,8 +1,10 @@
 Instructions: run backend and frontend in separate terminals.
 
 Backend (terminal 1):
-cd /Users/rohitaromal/University/hacklondon-26/backend
-source venv/bin/activate
+cd backend
+# Create env (first time): conda create -n hacklondon python=3.11 -y
+conda activate hacklondon
+# Install deps (first time): pip install -r requirements.txt
 uvicorn app.main:app --reload
 
 Frontend (terminal 2):

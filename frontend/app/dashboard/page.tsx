@@ -1,29 +1,281 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { analyzePostcode, fetchReport } from '@/lib/api'
-import { AnalyzeResponse, ReportResponse } from '@/lib/types'
-import { PostcodeInput } from '@/components/PostcodeInput'
+import { AnalyzeResponse, ReportResponse, ProjectParams, ManualOverrides } from '@/lib/types'
+import { Sidebar, Tab, HistoryEntry, TABS } from '@/components/Sidebar'
 import { ApprovalProbability } from '@/components/panels/ApprovalProbability'
 import { ViabilityScore } from '@/components/panels/ViabilityScore'
 import { ConstraintsPanel } from '@/components/panels/ConstraintsPanel'
 import { PlanningMetrics } from '@/components/panels/PlanningMetrics'
 import { MarketMetrics } from '@/components/panels/MarketMetrics'
 import { AIReport } from '@/components/panels/AIReport'
+import { BuildCostCalculator } from '@/components/panels/BuildCostCalculator'
+import { SolarPotential } from '@/components/panels/SolarPotential'
+import { SchoolsPanel } from '@/components/panels/SchoolsPanel'
 import { SkeletonCard, SkeletonGauge } from '@/components/ui/SkeletonCard'
-import { LogOut, AlertCircle } from 'lucide-react'
+import { PostcodeInput } from '@/components/PostcodeInput'
+import { AlertCircle, FileDown, MapPin, Percent, BarChart2, PoundSterling, Zap, Menu, X, Plus } from 'lucide-react'
 
-// Dynamically import PlanningMap to avoid SSR issues with Leaflet
 const PlanningMap = dynamic(
-  () => import('@/components/map/PlanningMap').then((mod) => mod.PlanningMap),
+  () => import('@/components/map/PlanningMap').then(m => m.PlanningMap),
   { ssr: false, loading: () => <SkeletonCard /> }
 )
 
+// ── localStorage helpers ──────────────────────────────────────────────────────
+const HISTORY_KEY = 'planpilot_history'
+const MAX_HISTORY = 8
+
+function loadHistory(): HistoryEntry[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') }
+  catch { return [] }
+}
+
+function pushHistory(entry: HistoryEntry): HistoryEntry[] {
+  const existing = loadHistory().filter(h => h.postcode !== entry.postcode)
+  const next = [entry, ...existing].slice(0, MAX_HISTORY)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+  return next
+}
+
+// ── Section header helper ─────────────────────────────────────────────────────
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-6">
+      <div className="w-1.5 h-6 bg-swiss-accent flex-shrink-0" />
+      <div>
+        <h2 className="text-sm font-black uppercase tracking-widest">{title}</h2>
+        {subtitle && <p className="text-xs opacity-40 mt-0.5">{subtitle}</p>}
+      </div>
+      <div className="flex-1 h-px bg-black/10" />
+    </div>
+  )
+}
+
+// ── Stat card helper ──────────────────────────────────────────────────────────
+function StatCard({
+  label, value, sub, color = 'text-swiss-black', icon: Icon,
+}: {
+  label: string; value: string; sub?: string; color?: string
+  icon: React.ComponentType<{ className?: string }>
+}) {
+  return (
+    <div className="bg-white border-4 border-black p-5 flex items-start gap-4">
+      <div className="w-10 h-10 border-2 border-black/20 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-5 h-5 opacity-50" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-widest font-bold opacity-50 mb-1">{label}</p>
+        <p className={`text-2xl font-black leading-none truncate ${color}`}>{value}</p>
+        {sub && <p className="text-xs opacity-40 mt-1">{sub}</p>}
+      </div>
+    </div>
+  )
+}
+
+// ── Tab content components ────────────────────────────────────────────────────
+function OverviewTab({
+  data, reportData, reportLoading, loading,
+}: {
+  data: AnalyzeResponse | null
+  reportData: ReportResponse | null
+  reportLoading: boolean
+  loading: boolean
+}) {
+  if (loading && !data) {
+    return (
+      <div className="space-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-24 bg-white border-4 border-black animate-pulse" />)}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <SkeletonCard /><SkeletonGauge /><SkeletonCard />
+        </div>
+        <SkeletonCard />
+      </div>
+    )
+  }
+
+  if (!data) return <EmptyState />
+
+  const approvalPct = data.ml_prediction.approval_probability * 100
+  const trendPct = data.market_metrics.price_trend_24m * 100
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={Percent}
+          label="Approval Probability"
+          value={`${approvalPct.toFixed(1)}%`}
+          color={approvalPct >= 70 ? 'text-green-600' : approvalPct >= 45 ? 'text-amber-600' : 'text-red-600'}
+          sub="ML prediction"
+        />
+        <StatCard
+          icon={BarChart2}
+          label="Viability Score"
+          value={`${data.viability_score.toFixed(0)}/100`}
+          color={data.viability_score >= 70 ? 'text-green-600' : data.viability_score >= 40 ? 'text-amber-600' : 'text-red-600'}
+          sub="Overall rating"
+        />
+        <StatCard
+          icon={PoundSterling}
+          label="Avg Price / m²"
+          value={`£${data.market_metrics.avg_price_per_m2.toLocaleString('en-GB')}`}
+          sub={`${trendPct >= 0 ? '▲' : '▼'} ${Math.abs(trendPct).toFixed(1)}% (24m)`}
+          color={trendPct >= 0 ? 'text-swiss-black' : 'text-red-600'}
+        />
+        <StatCard
+          icon={Zap}
+          label="Avg EPC Rating"
+          value={data.market_metrics.avg_epc_rating}
+          sub={data.location.district}
+        />
+      </div>
+
+      {/* Map + gauges */}
+      <div>
+        <SectionHeader title="Location & Scores" subtitle="Geocoded location with ML approval prediction and viability rating" />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <PlanningMap location={data.location} postcode={data.postcode} />
+          <ApprovalProbability probability={data.ml_prediction.approval_probability} />
+          <ViabilityScore score={data.viability_score} breakdown={data.viability_breakdown} />
+        </div>
+      </div>
+
+      {/* AI Report */}
+      <div>
+        <SectionHeader title="AI Planning Report" subtitle="Strategic analysis generated by Gemini 2.0 Flash" />
+        {reportLoading ? (
+          <AIReport
+            report={{ overall_outlook: '', key_risks: [], strategic_recommendation: '', risk_mitigation: [] }}
+            generatedAt=""
+            loading={true}
+          />
+        ) : reportData ? (
+          <AIReport report={reportData.report} generatedAt={reportData.generated_at} />
+        ) : (
+          <div className="swiss-card text-center py-8 opacity-40">
+            <p className="text-sm uppercase tracking-wider">Report not available</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+function PlanningTab({ data, loading }: { data: AnalyzeResponse | null; loading: boolean }) {
+  if (loading && !data) return <div className="space-y-6"><SkeletonCard /><SkeletonCard /></div>
+  if (!data) return <EmptyState />
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+      <div>
+        <SectionHeader title="Regulatory Constraints" subtitle="Planning designations that affect permitted development and application requirements" />
+        <ConstraintsPanel constraints={data.constraints} />
+      </div>
+      <div>
+        <SectionHeader title="Local Application Data" subtitle="Historical planning decisions within 500m radius over the past 5 years" />
+        <PlanningMetrics metrics={data.planning_metrics} />
+      </div>
+    </motion.div>
+  )
+}
+
+function MarketTab({ data, loading }: { data: AnalyzeResponse | null; loading: boolean }) {
+  if (loading && !data) return <div className="space-y-6"><SkeletonCard /><SkeletonCard /></div>
+  if (!data) return <EmptyState />
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+      <div>
+        <SectionHeader title="Property Market" subtitle="Land Registry price data and EPC ratings within 500m" />
+        <MarketMetrics metrics={data.market_metrics} />
+      </div>
+      <div>
+        <SectionHeader title="Development Feasibility" subtitle="Estimate build cost, value uplift and projected ROI using BCIS industry rates" />
+        <BuildCostCalculator avgPricePerM2={data.market_metrics.avg_price_per_m2} />
+      </div>
+    </motion.div>
+  )
+}
+
+function SustainabilityTab({ data, loading }: { data: AnalyzeResponse | null; loading: boolean }) {
+  if (loading && !data) return <SkeletonCard />
+  if (!data) return <EmptyState />
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+      <div>
+        <SectionHeader title="Solar Potential" subtitle="Estimated photovoltaic generation, bill savings and payback period for this location" />
+        <div className="max-w-2xl">
+          <SolarPotential lat={data.location.lat} lon={data.location.lon} />
+        </div>
+      </div>
+      <div>
+        <SectionHeader title="Energy Performance" subtitle="Average EPC rating for residential properties in this postcode" />
+        <div className="bg-white border-4 border-black p-8 max-w-2xl">
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <p className="text-6xl font-black">{data.market_metrics.avg_epc_rating}</p>
+              <p className="text-xs uppercase tracking-widest opacity-50 mt-1">Avg EPC</p>
+            </div>
+            <div className="flex-1">
+              <div className="flex gap-1 h-5 mb-2">
+                {['A','B','C','D','E','F','G'].map(r => {
+                  const colors: Record<string,string> = {
+                    A:'bg-green-700', B:'bg-green-500', C:'bg-lime-500', D:'bg-amber-400', E:'bg-amber-600', F:'bg-red-500', G:'bg-red-700'
+                  }
+                  return (
+                    <div key={r} className={`flex-1 border border-black/20 ${colors[r]} ${r === data.market_metrics.avg_epc_rating ? 'opacity-100 ring-2 ring-black' : 'opacity-25'}`} />
+                  )
+                })}
+              </div>
+              <div className="flex justify-between text-xs opacity-30"><span>A — Best</span><span>G — Worst</span></div>
+              <p className="text-sm opacity-60 mt-3">
+                Properties rated C or below may require improvement under upcoming MEES regulations (2028). This affects landlords and development valuations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function CommunityTab({ data, loading }: { data: AnalyzeResponse | null; loading: boolean }) {
+  if (loading && !data) return <SkeletonCard />
+  if (!data) return <EmptyState />
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+      <div>
+        <SectionHeader title="Nearby Schools" subtitle="Ofsted-rated schools within 0.75 miles — a primary driver of residential property values" />
+        <div className="max-w-2xl">
+          <SchoolsPanel schools={data.nearby_schools} />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-32 text-center">
+      <MapPin className="w-12 h-12 opacity-10 mb-4" />
+      <p className="text-xl font-black uppercase tracking-tighter opacity-20">No analysis loaded</p>
+      <p className="text-sm opacity-30 mt-2">Enter a postcode in the sidebar to begin</p>
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -33,237 +285,271 @@ export default function DashboardPage() {
   const [reportData, setReportData] = useState<ReportResponse | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [searchHistory, setSearchHistory] = useState<HistoryEntry[]>([])
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showForm, setShowForm] = useState(false)
 
-  // Check authentication
   useEffect(() => {
+    setSearchHistory(loadHistory())
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        router.push('/login')
-        return
-      }
+      if (!session) { router.push('/login'); return }
       setUser(session.user)
       setToken(session.access_token)
     }
     checkAuth()
   }, [router])
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
-
-  const handleAnalyze = async (postcode: string) => {
-    if (!token) {
-      setError('Not authenticated')
-      return
-    }
+  const handleAnalyze = useCallback(async (postcode: string, params?: ProjectParams, overrides?: ManualOverrides) => {
+    if (!token) { setError('Not authenticated'); return }
 
     setLoading(true)
     setReportLoading(true)
     setError(null)
     setAnalyzeData(null)
     setReportData(null)
+    setActiveTab('overview')
+    setSidebarOpen(false)
+    setShowForm(false)
 
     try {
-      // Step 1: Analyze — show dashboard panels as soon as this completes
-      const analyzeResult = await analyzePostcode(postcode, token)
-      setAnalyzeData(analyzeResult)
+      const result: AnalyzeResponse = await analyzePostcode(postcode, token, params, overrides)
+      setAnalyzeData(result)
       setLoading(false)
 
-      // Step 2: Fetch AI report — /analyze result is now cached on the backend
+      // Persist to history
+      const entry: HistoryEntry = {
+        postcode: result.postcode,
+        timestamp: Date.now(),
+        viability_score: Math.round(result.viability_score),
+        approval_probability: result.ml_prediction.approval_probability,
+      }
+      setSearchHistory(pushHistory(entry))
+
       try {
-        const reportResult = await fetchReport(postcode, token)
-        setReportData(reportResult)
-      } catch (reportErr) {
-        console.error('Report generation failed:', reportErr)
+        const report = await fetchReport(postcode, token)
+        setReportData(report)
+      } catch (e) {
+        console.error('Report failed:', e)
       } finally {
         setReportLoading(false)
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to analyze postcode')
+      setError(err.message || 'Analysis failed')
       setLoading(false)
       setReportLoading(false)
     }
+  }, [token])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
   }
 
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-2xl font-black uppercase tracking-tighter">
-          Loading...
-        </div>
+        <div className="animate-pulse text-2xl font-black uppercase tracking-tighter">Loading…</div>
       </div>
     )
   }
 
+  const activeTabMeta = TABS.find(t => t.id === activeTab)!
+
   return (
-    <main className="min-h-screen bg-swiss-muted">
-      {/* Header */}
-      <header className="border-b-4 border-swiss-black bg-swiss-white sticky top-0 z-50">
-        <div className="container mx-auto px-6 md:px-8 py-4 md:py-6 flex justify-between items-center">
-          <Link href="/">
-            <h1 className="text-xl md:text-3xl font-black tracking-tighter hover:text-swiss-accent transition-colors cursor-pointer">
-              PLANPILOT AI
-            </h1>
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="hidden md:block text-sm uppercase tracking-wider opacity-60">
-              {user.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 text-sm uppercase font-bold tracking-wider hover:text-swiss-accent transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden md:inline">Sign Out</span>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="flex h-screen overflow-hidden bg-slate-100">
 
-      {/* Main Content */}
-      <div className="container mx-auto px-6 md:px-8 py-8 md:py-12">
-        {/* Postcode Input */}
-        <PostcodeInput onAnalyze={handleAnalyze} loading={loading} />
-
-        {/* Error Message */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 border-4 border-swiss-accent bg-swiss-accent bg-opacity-10 p-6 flex items-start gap-4"
-          >
-            <AlertCircle className="w-6 h-6 text-swiss-accent flex-shrink-0 mt-1" />
-            <div>
-              <p className="font-bold uppercase tracking-wider mb-1">Analysis Failed</p>
-              <p className="text-sm">{error}</p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Summary Banner */}
-        {!loading && analyzeData && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mt-6 border-4 border-slate-800 bg-slate-900 text-white"
-          >
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-y-4 md:divide-y-0 md:divide-x-4 divide-white/10">
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Location</p>
-                <p className="text-2xl font-black">{analyzeData.postcode}</p>
-                <p className="text-xs opacity-50 mt-1">{analyzeData.location.district}</p>
-              </div>
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Approval Chance</p>
-                <p className={`text-2xl font-black ${analyzeData.ml_prediction.approval_probability >= 0.7 ? 'text-green-400' : analyzeData.ml_prediction.approval_probability >= 0.4 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {(analyzeData.ml_prediction.approval_probability * 100).toFixed(1)}%
-                </p>
-                <p className="text-xs opacity-50 mt-1">ML Prediction</p>
-              </div>
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Viability Score</p>
-                <p className={`text-2xl font-black ${analyzeData.viability_score >= 70 ? 'text-green-400' : analyzeData.viability_score >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {analyzeData.viability_score}<span className="text-sm opacity-60">/100</span>
-                </p>
-                <p className="text-xs opacity-50 mt-1">Overall Rating</p>
-              </div>
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Avg Price/m²</p>
-                <p className="text-2xl font-black">£{analyzeData.market_metrics.avg_price_per_m2.toLocaleString('en-GB')}</p>
-                <p className={`text-xs mt-1 ${analyzeData.market_metrics.price_trend_24m >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {analyzeData.market_metrics.price_trend_24m >= 0 ? '▲' : '▼'} {Math.abs(analyzeData.market_metrics.price_trend_24m * 100).toFixed(1)}% 24m trend
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Results Grid */}
-        {(loading || analyzeData) && (
-          <div className="mt-8 md:mt-12 space-y-8">
-            {/* Top Row: Map + Approval + Viability */}
-            <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-              {loading ? (
-                <>
-                  <SkeletonCard />
-                  <SkeletonGauge />
-                  <SkeletonCard />
-                </>
-              ) : analyzeData ? (
-                <>
-                  <PlanningMap location={analyzeData.location} postcode={analyzeData.postcode} />
-                  <ApprovalProbability probability={analyzeData.ml_prediction.approval_probability} />
-                  <ViabilityScore score={analyzeData.viability_score} breakdown={analyzeData.viability_breakdown} />
-                </>
-              ) : null}
-            </div>
-
-            {/* Middle Row: Constraints + Planning Metrics */}
-            <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
-              {loading ? (
-                <>
-                  <SkeletonCard />
-                  <SkeletonCard />
-                </>
-              ) : analyzeData ? (
-                <>
-                  <ConstraintsPanel constraints={analyzeData.constraints} />
-                  <PlanningMetrics metrics={analyzeData.planning_metrics} />
-                </>
-              ) : null}
-            </div>
-
-            {/* Bottom Row: Market Metrics + AI Report */}
-            <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
-              {loading ? (
-                <>
-                  <SkeletonCard />
-                  <SkeletonCard />
-                </>
-              ) : analyzeData ? (
-                <>
-                  <MarketMetrics metrics={analyzeData.market_metrics} />
-                  {reportLoading ? (
-                    <AIReport
-                      report={{
-                        overall_outlook: '',
-                        key_risks: [],
-                        strategic_recommendation: '',
-                        risk_mitigation: [],
-                      }}
-                      generatedAt=""
-                      loading={true}
-                    />
-                  ) : reportData ? (
-                    <AIReport report={reportData.report} generatedAt={reportData.generated_at} />
-                  ) : (
-                    <div className="swiss-card">
-                      <p className="text-center text-sm opacity-60">Report generation failed</p>
-                    </div>
-                  )}
-                </>
-              ) : null}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !analyzeData && !error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mt-24 text-center"
-          >
-            <p className="text-xl uppercase tracking-wider opacity-40">
-              Enter a postcode to begin analysis
-            </p>
-          </motion.div>
-        )}
+      {/* ── Sidebar (desktop always, mobile overlay) ── */}
+      <div className="hidden lg:block no-print">
+        <Sidebar
+          userEmail={user.email}
+          onSignOut={handleSignOut}
+          onAnalyze={handleAnalyze}
+          loading={loading}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          hasData={!!analyzeData}
+          searchHistory={searchHistory}
+          currentPostcode={analyzeData?.postcode}
+        />
       </div>
-    </main>
+
+      {/* Mobile sidebar overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.div
+              initial={{ x: -288 }} animate={{ x: 0 }} exit={{ x: -288 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed left-0 top-0 z-50 lg:hidden"
+            >
+              <Sidebar
+                userEmail={user.email}
+                onSignOut={handleSignOut}
+                onAnalyze={handleAnalyze}
+                loading={loading}
+                activeTab={activeTab}
+                setActiveTab={(t) => { setActiveTab(t); setSidebarOpen(false) }}
+                hasData={!!analyzeData}
+                searchHistory={searchHistory}
+                currentPostcode={analyzeData?.postcode}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+
+        {/* Top bar */}
+        <header className="flex-shrink-0 bg-white border-b-4 border-black px-6 py-4 flex items-center gap-4 z-20 no-print">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden w-10 h-10 border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors flex-shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Breadcrumb */}
+          <div className="flex-1 min-w-0">
+            {analyzeData ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-swiss-accent flex-shrink-0" />
+                  <span className="text-2xl font-black tracking-tighter">{analyzeData.postcode}</span>
+                </div>
+                <span className="text-black/20 font-black hidden sm:block">·</span>
+                <span className="text-sm font-bold opacity-50 hidden sm:block">{analyzeData.location.district}</span>
+                <span className="text-black/20 font-black hidden sm:block">·</span>
+                <span className="text-sm uppercase tracking-wider font-bold opacity-40 hidden sm:block">{activeTabMeta.label}</span>
+              </div>
+            ) : (
+              <p className="text-sm uppercase tracking-widest font-bold opacity-30">No postcode selected</p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              onClick={() => setShowForm(true)}
+              className="no-print flex items-center gap-2 border-2 border-black px-3 py-2 text-xs uppercase font-bold tracking-wider hover:bg-black hover:text-white transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Analysis</span>
+            </button>
+            {analyzeData && (
+              <button
+                onClick={() => window.print()}
+                className="no-print flex items-center gap-2 border-2 border-black px-3 py-2 text-xs uppercase font-bold tracking-wider hover:bg-black hover:text-white transition-colors"
+              >
+                <FileDown className="w-4 h-4" />
+                <span className="hidden sm:inline">PDF</span>
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Error banner */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              className="flex-shrink-0 border-b-4 border-swiss-accent bg-swiss-accent/10 px-6 py-3 flex items-center gap-3 no-print"
+            >
+              <AlertCircle className="w-5 h-5 text-swiss-accent flex-shrink-0" />
+              <p className="text-sm font-bold">{error}</p>
+              <button onClick={() => setError(null)} className="ml-auto">
+                <X className="w-4 h-4 opacity-60 hover:opacity-100" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile tab navigation */}
+        {analyzeData && (
+          <div className="flex-shrink-0 lg:hidden border-b-2 border-black/10 bg-white overflow-x-auto no-print">
+            <div className="flex">
+              {TABS.map(tab => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-3 text-xs font-black uppercase tracking-wider whitespace-nowrap border-b-2 transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-swiss-accent text-swiss-accent'
+                        : 'border-transparent text-black/40 hover:text-black'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-6xl mx-auto px-6 py-8 md:px-8">
+            {/* Show PostcodeInput form when no data or user clicked New Analysis */}
+            {(showForm || !analyzeData) && (
+              <div className="mb-8">
+                <PostcodeInput onAnalyze={handleAnalyze} loading={loading} />
+                {analyzeData && (
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="mt-4 text-xs uppercase tracking-widest font-bold opacity-40 hover:opacity-100 transition-opacity"
+                  >
+                    &larr; Back to results
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Show results when data is loaded and form is hidden */}
+            {analyzeData && !showForm && (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {activeTab === 'overview' && (
+                    <OverviewTab data={analyzeData} reportData={reportData} reportLoading={reportLoading} loading={loading} />
+                  )}
+                  {activeTab === 'planning' && (
+                    <PlanningTab data={analyzeData} loading={loading} />
+                  )}
+                  {activeTab === 'market' && (
+                    <MarketTab data={analyzeData} loading={loading} />
+                  )}
+                  {activeTab === 'sustainability' && (
+                    <SustainabilityTab data={analyzeData} loading={loading} />
+                  )}
+                  {activeTab === 'community' && (
+                    <CommunityTab data={analyzeData} loading={loading} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            )}
+
+            {/* Empty state only when no data and not showing form (shouldn't happen but fallback) */}
+            {!analyzeData && !showForm && !loading && <EmptyState />}
+          </div>
+        </main>
+      </div>
+    </div>
   )
 }

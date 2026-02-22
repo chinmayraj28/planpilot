@@ -1,0 +1,3 @@
+- Store history of postcodes searched. 
+- Make it a proper dashboard page with side base_score, separate into multiple tabs and group cards with semanticsl meaning and section 
+- Make it a proper dashboard 

@@ -11,7 +11,8 @@ from app.services.gemini import generate_report
 from app.schemas.models import (
     AnalyzeResponse, Location, Constraints, PlanningMetrics,
     MarketMetrics, MLPrediction, ViabilityBreakdown,
-    ReportResponse, PlanningReport,
+    ReportResponse, PlanningReport, ProjectParams,
+    ApplicationType, PropertyType,
 )
 from app.db.database import get_pool
 from app import cache
@@ -25,9 +26,12 @@ async def _run_analysis(postcode: str) -> AnalyzeResponse:
     try:
         geo = await geocode_postcode(postcode)
     except ValueError:
-        raise HTTPException(status_code=404, detail="Postcode not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"We couldn't find the postcode '{postcode}'. Please check it's a valid UK postcode and try again.",
+        )
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Geocoding error: {e}")
+        raise HTTPException(status_code=502, detail=f"Geocoding service error: {e}")
 
     pool = await get_pool()
 
@@ -40,6 +44,9 @@ async def _run_analysis(postcode: str) -> AnalyzeResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Data fetch error: {e}")
 
+    # Use default project params for fallback analysis
+    default_params = ProjectParams()
+
     approval_prob = predict_approval(
         flood_zone=constraints_data["flood_zone"],
         in_conservation_area=constraints_data["in_conservation_area"],
@@ -51,6 +58,10 @@ async def _run_analysis(postcode: str) -> AnalyzeResponse:
         avg_price_per_m2=market_data["avg_price_per_m2"],
         price_trend_24m=market_data["price_trend_24m"],
         avg_epc_rating=market_data["avg_epc_rating"],
+        application_type=default_params.application_type.value,
+        property_type=default_params.property_type.value,
+        num_storeys=default_params.num_storeys,
+        estimated_floor_area_m2=default_params.estimated_floor_area_m2,
     )
 
     viability_score, viability_breakdown = compute_viability(
@@ -61,10 +72,14 @@ async def _run_analysis(postcode: str) -> AnalyzeResponse:
         in_article4_zone=constraints_data["in_article4_zone"],
         avg_price_per_m2=market_data["avg_price_per_m2"],
         price_trend_24m=market_data["price_trend_24m"],
+        application_type=default_params.application_type.value,
+        num_storeys=default_params.num_storeys,
+        estimated_floor_area_m2=default_params.estimated_floor_area_m2,
     )
 
     return AnalyzeResponse(
         postcode=postcode.upper().strip(),
+        project_params=default_params,
         location=Location(lat=geo.lat, lon=geo.lon, district=geo.district, ward=geo.ward),
         constraints=Constraints(**constraints_data),
         planning_metrics=PlanningMetrics(**planning_data),

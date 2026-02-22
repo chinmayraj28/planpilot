@@ -43,7 +43,7 @@ export function PlanningMap({ location, postcode }: PlanningMapProps) {
         <InfoTooltip text="Interactive map showing the postcode location and surrounding area." />
       </div>
 
-      <div className="border-4 border-swiss-black h-[400px] overflow-hidden">
+      <div className="border-4 border-swiss-black h-[400px] overflow-hidden isolate">
         <MapContainer
           center={[location.lat, location.lon]}
           zoom={14}

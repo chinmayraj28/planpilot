@@ -137,3 +137,90 @@
 .leaflet-container {
   @apply border-4 border-swiss-black;
 }
+
+/* Prevent Leaflet panes/controls escaping above sticky navbar */
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+/* Keep popups above tiles but still inside the stacking context */
+.leaflet-popup-pane {
+  z-index: 7 !important;
+}
+.leaflet-marker-pane {
+  z-index: 6 !important;
+}
+.leaflet-tooltip-pane {
+  z-index: 6 !important;
+}
+
+/* ─── Print / PDF styles ─── */
+@media print {
+  /* Hide interactive chrome */
+  header,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+
+  /* Remove sticky header space */
+  main {
+    padding-top: 0 !important;
+  }
+
+  /* Print title */
+  .print-title {
+    display: block !important;
+  }
+
+  /* Force white backgrounds on cards */
+  .swiss-card,
+  .swiss-card-dark,
+  [class*="swiss-card"] {
+    background: white !important;
+    color: black !important;
+    border: 2px solid black !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Row breaks between grid sections */
+  .print-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Avoid cutting cards mid-page */
+  .swiss-card {
+    margin-bottom: 12pt;
+  }
+
+  /* Collapse grid to single column for reliable PDF layout */
+  .grid {
+    display: block !important;
+  }
+
+  /* Ensure map doesn't print as empty white box */
+  .leaflet-container {
+    display: none !important;
+  }
+
+  /* Remove framer-motion invisible states */
+  [style*="opacity: 0"] {
+    opacity: 1 !important;
+  }
+
+  /* Remove animations */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

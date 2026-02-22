@@ -2,13 +2,18 @@
 
 import { motion } from 'framer-motion'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
-import { TrendingUp, TrendingDown, PoundSterling, Zap, AlertTriangle } from 'lucide-react'
+import { TrendingUp, TrendingDown, PoundSterling, Zap, AlertTriangle, Home } from 'lucide-react'
 
 interface MarketMetricsProps {
   metrics: {
     avg_price_per_m2: number
     price_trend_24m: number
     avg_epc_rating: string
+    comparable_sales: Array<{
+      postcode: string
+      price: number
+      sale_date: string
+    }>
   }
 }
 
@@ -125,6 +130,31 @@ export function MarketMetrics({ metrics }: MarketMetricsProps) {
             )}
           </div>
         </div>
+        {/* Comparable Sales */}
+        {metrics.comparable_sales && metrics.comparable_sales.length > 0 && (
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 border-4 border-swiss-black flex items-center justify-center flex-shrink-0">
+              <Home className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs uppercase tracking-widest font-bold opacity-60">Recent Comparable Sales</span>
+                <InfoTooltip text="5 most recent property sales within 500m from Land Registry data." />
+              </div>
+              <div className="space-y-2">
+                {metrics.comparable_sales.map((sale, i) => (
+                  <div key={i} className="flex items-center justify-between border border-swiss-black/20 px-3 py-2">
+                    <div>
+                      <span className="text-sm font-bold">{sale.postcode}</span>
+                      <span className="text-xs opacity-40 ml-2">{new Date(sale.sale_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
+                    </div>
+                    <span className="text-sm font-black">£{sale.price.toLocaleString('en-GB')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   )
